@@ -3,7 +3,7 @@ module SargassumInterface
 using Pluto
 
 function run()
-    Pluto.run(notebook = joinpath(@__DIR__, "BOMBinterface.jl"))
+    Pluto.run(notebook = joinpath(@__DIR__, "..", "interface", "BOMBinterface.jl"))
     return nothing 
 end
 
