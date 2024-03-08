@@ -2,8 +2,13 @@ module SargassumInterface
 
 using Pluto
 
-function __init__()
+function run()
     Pluto.run(notebook = joinpath(@__DIR__, "BOMBinterface.jl"))
+    return nothing 
+end
+
+function __init__()
+    @info "Use `SargassumInterface.run()` to start the interface."
 end
 
 end # module SargassumInterface
