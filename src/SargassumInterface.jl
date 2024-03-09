@@ -3,16 +3,16 @@ module SargassumInterface
 using Pluto
 
 function run()
-    Pluto.run(notebook = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl"))
+    bomb_int = joinpath(@__DIR__, "..", "interface", "BOMBinterface.jl")
+    bomb_edit = joinpath(pwd(), "BOMBinterface-editable.jl")
+    rm(bomb_edit, force = true)
+    cp(bomb_int, bomb_edit)
+
+    Pluto.run(notebook = bomb_edit)
     return nothing 
 end
 
 function __init__()
-    rm(joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl"), force = true)
-
-    cp(
-        joinpath(@__DIR__, "..", "interface", "BOMBinterface.jl"), 
-        joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl"))
     @info "Use `SargassumInterface.run()` to start the interface."
 end
 
