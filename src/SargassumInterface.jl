@@ -2,6 +2,8 @@ module SargassumInterface
 
 using Pluto
 
+BOMBInterface = joinpath(@__DIR__, "..", "interface", "BOMBinterface.jl")
+
 function run()
     bomb_int = joinpath(@__DIR__, "..", "interface", "BOMBinterface.jl")
     bomb_edit = joinpath(pwd(), "BOMBinterface-editable.jl")
