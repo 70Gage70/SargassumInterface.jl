@@ -5,8 +5,7 @@ using Pluto, Scratch
 # interface_cache = ""
 
 function run()
-    f = download("https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl")
-    Pluto.run(notebook = f)
+    Pluto.run(notebook = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl"))
     return nothing 
 end
 
@@ -17,6 +16,15 @@ function __init__()
     # rm(bomb_edit, force = true)
     # cp(bomb_int, bomb_edit)
     @info "Use `SargassumInterface.run()` to start the interface."
+end
+
+import PrecompileTools
+
+PrecompileTools.@compile_workload begin
+    download(
+        "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl",
+        joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
+    )
 end
 
 end # module SargassumInterface
