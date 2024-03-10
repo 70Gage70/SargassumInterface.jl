@@ -18,6 +18,11 @@ end
 begin
     import Pkg
     Pkg.activate(@__DIR__)
+	Pkg.add("PlutoUI")
+	Pkg.add("SargassumBOMB")
+	Pkg.add("SargassumFromAFAI")
+	Pkg.add("WGLMakie")
+	Pkg.add("Dates")
 end
 
 # ╔═╡ 32bd8970-a2f8-478b-ab48-4fbd1bcf735b
