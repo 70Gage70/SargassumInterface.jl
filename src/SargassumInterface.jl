@@ -5,8 +5,8 @@ using Pluto, Scratch
 # interface_cache = ""
 
 function run()
-    chmod(@__DIR__, 0o755)
-    Pluto.run(notebook = joinpath(@__DIR__, "BOMBinterface.jl"))
+    f = download("https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl")
+    Pluto.run(notebook = f)
     return nothing 
 end
 
