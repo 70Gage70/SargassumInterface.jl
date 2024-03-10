@@ -15,7 +15,6 @@ macro bind(def, element)
 end
 
 # ╔═╡ 66e144d6-dcbb-11ee-26f3-b36ae4be3693
-# ╠═╡ show_logs = false
 begin
     import Pkg
     Pkg.activate(joinpath(@__DIR__, ".."))
@@ -424,13 +423,15 @@ begin
 	    )
 	
 	    sol = simulate(rp, showprogress = false)
+	else
+		@info "Integration disabled during edit mode."
 	end
 end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
 begin
 	if edit_mode
-		"You are in edit mode, uncheck the box to see the plot."
+		@info "You are in edit mode, uncheck the box to see the plot."
 	else
 		fig = Figure(size = (800, 400), figure_padding = (10, 40, 10, 10))
 		ax = geo_axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 0.5)
@@ -443,8 +444,8 @@ end
 # ╔═╡ Cell order:
 # ╟─5aaaa4b6-cf8f-4a6c-8ae7-c6aeb3745dae
 # ╟─174f180c-642c-46e4-976b-89ad6f99c962
-# ╠═66e144d6-dcbb-11ee-26f3-b36ae4be3693
-# ╠═32bd8970-a2f8-478b-ab48-4fbd1bcf735b
+# ╟─66e144d6-dcbb-11ee-26f3-b36ae4be3693
+# ╟─32bd8970-a2f8-478b-ab48-4fbd1bcf735b
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─71f616dd-c637-4039-85d4-04bc5fdd8662
 # ╟─618ddac0-4a20-4146-8abd-761a97a451a6
