@@ -17,7 +17,7 @@ end
 # ╔═╡ 66e144d6-dcbb-11ee-26f3-b36ae4be3693
 begin
     import Pkg
-    Pkg.activate(joinpath(pwd(), ".."))
+    Pkg.activate(@__DIR__)
 end
 
 # ╔═╡ 32bd8970-a2f8-478b-ab48-4fbd1bcf735b
