@@ -18,7 +18,7 @@ end
 # ╠═╡ show_logs = false
 begin
     import Pkg
-    Pkg.activate(@__DIR__, "..")
+    Pkg.activate(joinpath(@__DIR__, ".."))
 end
 
 # ╔═╡ 32bd8970-a2f8-478b-ab48-4fbd1bcf735b
