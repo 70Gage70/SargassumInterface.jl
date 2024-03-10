@@ -1,11 +1,14 @@
 module SargassumInterface
 
-using Pluto, Scratch
+using Pluto
 
 # interface_cache = ""
 
 function run()
-    Pluto.run(notebook = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl"))
+    f = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
+    DL_LINK = "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl"
+    !isfile(f) && download(DL_LINK, f)
+    Pluto.run(notebook = f)
     return nothing 
 end
 
@@ -18,13 +21,13 @@ function __init__()
     @info "Use `SargassumInterface.run()` to start the interface."
 end
 
-import PrecompileTools
+# import PrecompileTools
 
-PrecompileTools.@compile_workload begin
-    download(
-        "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl",
-        joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
-    )
-end
+# PrecompileTools.@compile_workload begin
+#     download(
+#         "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl",
+#         joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
+#     )
+# end
 
 end # module SargassumInterface
