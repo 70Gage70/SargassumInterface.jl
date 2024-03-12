@@ -219,6 +219,11 @@ md"""
 - "NoLand": clumps do not die when reaching land
 """
 
+# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
+md"""
+## Warnings
+"""
+
 # ╔═╡ f0590b8f-42a0-435d-a4fa-5f9cf206235a
 md"""
 # Plotting
@@ -293,6 +298,135 @@ begin
 	end
 end
 
+# ╔═╡ da645592-41d8-4212-8ca0-241923f2dc14
+begin
+	warnings_q = false
+	
+	# check if requested times are within range
+	local t1 = parse(DateTime, tspan_data[1])
+	local t2 = parse(DateTime, tspan_data[2])
+
+	local ts = [
+		WATER_ITP.x.dims[:t], WIND_ITP.x.dims[:t], 
+		STOKES_ITP.x.dims[:t], WAVES_ITP.x.dims[:t], 
+		NUTRIENTS_ITP.x.dims[:t], TEMPERATURE_ITP.x.dims[:t]]
+	local names = ["WATER", "WIND", "STOKES", "WAVES", "NUTRIENTS", "TEMPERATURE", "LAND"]
+	
+	for i = 1:length(ts)
+		local tspan = ts[i] |> x -> (x[1], x[end]) .|> time2datetime
+		if !(tspan[1] <= t1 <= tspan[2]) || !(tspan[1] <= t2 <= tspan[2])
+			@warn "Requested timespan is outside the range of $(names[i])."
+			global warnings_q = true
+		end
+	end
+
+	# check if requested positions are within range
+	local lonslats = [
+		xy2sph(WATER_ITP.x.dims[:x], WATER_ITP.x.dims[:y]),
+		xy2sph(WIND_ITP.x.dims[:x], WIND_ITP.x.dims[:y]),
+		xy2sph(STOKES_ITP.x.dims[:x], STOKES_ITP.x.dims[:y]),
+		xy2sph(WAVES_ITP.x.dims[:x], WAVES_ITP.x.dims[:y]),
+		xy2sph(NUTRIENTS_ITP.x.dims[:x], NUTRIENTS_ITP.x.dims[:y]),
+		xy2sph(TEMPERATURE_ITP.x.dims[:x], TEMPERATURE_ITP.x.dims[:y]),
+		xy2sph(LAND_ITP.x.dims[:x], LAND_ITP.x.dims[:y])]
+	local names = ["WATER", "WIND", "STOKES", "WAVES", "NUTRIENTS", "TEMPERATURE"]
+	local cor = corners .|> x -> parse(Float64, x)
+	
+	for i = 1:length(lonslats)
+		local lonlat = (lonslats[i][1][1], lonslats[i][2][end])
+		if !all(lonlat[1] .<= cor .<= lonlat[2])
+			@warn "Requested position is outside the range of $(names[i])."
+			global warnings_q = true
+		end
+	end
+
+	# check clump parameters
+	local δ, a, σ, α, force_α, τ, force_τ = clump_parameters
+	local δ, a, σ = (δ, a, σ) .|> x -> parse(Float64, x)
+	if !(1.0 <= δ <= 5.0)
+		@warn "δ should definitely be at least 1.0 and generally should not be larger than 5"
+		global warnings_q = true
+	end
+	if !(0.0 <= a <= 1.0e-2)
+		@warn "δ should definitely be at least 0.0 and generally should not be larger than 0.01"
+		global warnings_q = true
+	end
+	if !(0.0 <= σ <= 2.0)
+		@warn "σ should definitely be at least 0.0 and generally should not be larger than 2.0"
+		global warnings_q = true
+	end
+	if force_α && !(0.0 <= α <= 0.05)
+		@warn "α should definitely be at least 0.0 and generally should not be larger than 0.05"
+		global warnings_q = true
+	end
+	if force_τ && !(0.0 <= τ <= 0.5)
+		@warn "α should definitely be at least 0.0 and generally should not be larger than 0.5"
+		global warnings_q = true
+	end
+
+	# check spring parameters
+	local spring_type, amplitude = spring_parameters
+	local amplitude = parse(Float64, amplitude)
+	if !(0.0 <= amplitude)
+		@warn "Spring amplitude should definitely be at least 0.0."
+		global warnings_q = true
+	end
+
+	# check connections parameters
+	local conn_type, param = connections_parameters
+
+	if conn_type == "Nearest"
+		try
+			param = parse(Int64, param)
+			if !(0.0 <= param)
+				@warn "Spring parameter should definitely be at least 0.0."
+				global warnings_q = true
+			end
+		catch e
+			@warn "Could not parse the spring parameter (number of nearest neighbors) as an integer."
+			global warnings_q = true
+		end
+
+	elseif conn_type == "Radius"
+		param = parse(Float64, param)
+		if !(0.0 <= param)
+			@warn "Spring parameter should definitely be at least 0.0."
+			global warnings_q = true
+		end
+	end
+
+	# check growth/death parameters
+	local gd_type, μ_max, m, K_N, c_min, c_max = gd_parameters
+	if gd_type == "Brooks"
+		μ_max, m, K_N = (μ_max, m, K_N) .|> x -> parse(Float64, x)
+		
+
+		if !all(0 .<= [μ_max, m, K_N])
+			@warn "Brooks parameters should definitely be at least 0.0."
+			global warnings_q = true
+		end
+
+		try 
+			c_min, c_max = (c_min, c_max) .|> x -> parse(Int64, x)
+			if (c_min > c_max) || c_min < 0 || c_max < 0
+				@warn "Clumps limits should be positive and the minimum should be less than the maximum."
+			end
+
+		catch
+			@warn "Could not parse the clump limits as integers."
+		end
+    end
+	
+	nothing
+end
+
+# ╔═╡ 0eaba7b9-5bfc-44b3-a99a-8b240a952e02
+begin
+	if warnings_q == 0
+		@info "If parameters are selected outside the appropriate ranges, warnings will appear here."
+	end
+end
+
 # ╔═╡ 536953f0-580f-4461-a9e5-2a27131e7b92
 md"""
 ### AFAI Distribution
@@ -360,7 +494,7 @@ begin
 		local param = parse(Int64, param)
 		connections = ConnectionsNearest(param)
 	elseif conn_type == "Radius"
-		local param = parse(Int64, param)*ΔL(ics)
+		local param = parse(Float64, param)*ΔL(ics)
 		connections = ConnectionsRadius(param)
 	end
 end
@@ -467,6 +601,9 @@ end
 # ╟─a170a7ae-d035-4a43-a658-0045334b4120
 # ╟─98c30e75-9461-4c76-813f-dbf6c7907068
 # ╟─ad6620f6-6182-467e-a0b2-7b653b165e63
+# ╟─5401dc9a-a647-4722-b49d-21023b829cb3
+# ╟─da645592-41d8-4212-8ca0-241923f2dc14
+# ╟─0eaba7b9-5bfc-44b3-a99a-8b240a952e02
 # ╟─f0590b8f-42a0-435d-a4fa-5f9cf206235a
 # ╟─b72056b0-e8e6-4b56-a391-777e5734f016
 # ╟─c2eef4f9-d933-4e22-9853-7dd57330761e
