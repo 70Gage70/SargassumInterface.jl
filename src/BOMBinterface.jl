@@ -447,8 +447,8 @@ begin
 	- ``\mu_\text{max}``: Sargassum maximum growth rate.
 	- ``m``: Sargassum mortality rate.
 	- ``k_\text{N}``: Sargassum nitrogen (N) uptake half saturation.
-	- `"clumps minimum"`: the number of clumps will not die below this value
-	- `"clumps maximum"`: the number of clumps will not grow above this value (default twice the number of initial clumps)
+	- `"clumps minimum"`: the number of clumps will not die below this value (default half the number of initial clumps).
+	- `"clumps maximum"`: the number of clumps will not grow above this value (default twice the number of initial clumps).
 	"""
 	ad(
 		md""" 
@@ -475,12 +475,13 @@ begin
 		nothing
 
 	elseif gd_type == "Brooks"
-		local n_max = string(Integer(2*ics.ics[1]))
+		local n_min = string(floor(Int64, n_clumps(ics.ics)/2))
+		local n_max = string(floor(Int64, 2*n_clumps(ics.ics)))
 		local ui_gd_brooks(Child) = md"""
 			``\mu_\text{max}`` [1/d]: $(Child(TextField(default = "0.1"))) \
 			``m`` [1/d]: $(Child(TextField(default = "0.05"))) \
 			``k_\text{N}`` [mmol N/m^3]: $(Child(TextField(default = "0.012"))) \
-			`clumps minimum`: $(Child(TextField(default = "0"))) \
+			`clumps minimum`: $(Child(TextField(default = n_min))) \
 			`clumps maximum`: $(Child(TextField(default = n_max)))
 			"""
 		@bind gd_params PlutoUI.combine() do Child
@@ -651,19 +652,17 @@ end
 # ╔═╡ dc6651a1-4c47-4cd7-a831-f37812e8a8e6
 begin
 	if gd_type == "Immortal"
-        gd_model = ImmortalModel()
+        gd_model = ImmortalModel(ics)
 	elseif gd_type == "Brooks"
 		local μ_max, m, k_N, c_min, c_max = gd_params
 		local μ_max, m, k_N = (μ_max, m, k_N) .|> x -> parse(Float64, x)
 		local c_min, c_max = (c_min, c_max) .|> x -> parse(Int64, x)
         local bmp = BrooksModelParameters(
-			TEMPERATURE_ITP.x, 
-			NUTRIENTS_ITP.x, 
             clumps_limits = (c_min, c_max), # the number of clumps can at most double
             μ_max = μ_max,
             m = m,
             k_N = k_N)
-        gd_model = BrooksModel(params = bmp)
+        gd_model = BrooksModel(ics, params = bmp)
     end
 	gd_model
 end
@@ -729,6 +728,7 @@ begin
 	local ui_afai_plot(Child) = md"""
 		Date (yyyy-mm): $(Child(TextField(default = "2018-04"))) \
 		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
+		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
 		Scale: $(Child(Select(["Log", "Linear"], default = "Log")))
 		"""
 	@bind afai_plot_params PlutoUI.combine() do Child
@@ -749,10 +749,11 @@ end
 begin
 	fig_afai = Figure(size = (800, 400), figure_padding = (10, 40, 10, 10))
 	ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 0.5)
-	local date, week, scale = afai_plot_params
+	local date, week, clouds, scale = afai_plot_params
 	local date = DateTime(date, "yyyy-mm") |> yearmonth
 	local week = parse(Int64, week)
 	SargassumFromAFAI.plot!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
+	clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
 	land!(ax_afai)
 	fig_afai
 end
