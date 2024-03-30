@@ -60,45 +60,5 @@ Temporary Items
 
 /Manifest.toml
 
-*.csv
-*.png
-*.mp4
-*.pdf
-!**/bulletins/*.pdf
-
-# Mathematica
-*.nb
-
-# Matlab
-*.mat
-
-# HDF5
-*.h5
-
-# NetCDF
-*.nc
-# !currents-temperature.nc
-# !nutrients.nc
-# !wind.nc
-# !afai.nc
-# !waves.nc
-# !water.nc
-
-# workspace
-/src/workspaces.jl
-
-# Test
-*.txt
-
-# Figures
-!**/figures/*.png
-
-# in prog
-/extra
-**/src/data
-
-# JLD files (store interpolants)
-*.jld2
-
-# so files (sysimages)
-*.so
+my_file_name.mat
+my_file_name.nc

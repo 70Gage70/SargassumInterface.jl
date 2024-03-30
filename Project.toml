@@ -10,5 +10,9 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 SargassumBOMB = "b5ee06fe-188d-450a-9f05-8f188668dd15"
 SargassumFromAFAI = "db9ac4ac-0b65-4026-8dbd-2bb7cf4c299a"
-Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 WGLMakie = "276b4fcb-3e11-5398-bf8b-a0c2d153d008"
+
+[compat]
+SargassumBOMB = "0.2.2"
+SargassumFromAFAI = "0.1.2"
+julia = "1.10"
