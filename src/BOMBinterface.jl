@@ -31,32 +31,22 @@ begin
 	@info "Loaded dependencies."
 end
 
+# ╔═╡ 7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
+
+
 # ╔═╡ a5e1070c-5f0a-44b6-8a43-451ffce19e73
 md"""
-# Introduction
-"""
-
-# ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
-md"""
-!!! danger ""
-	This is the interface to the `SargassumBOMB.jl` package and companion packages.
-
-	Be aware that the interface can take several minutes to load the first time it is opened.
+# SargassumBOMB Interface
 """
 
 # ╔═╡ c3eddd51-43c4-42f4-800a-ae9945df1e86
 md"""
-# Main Interface
+# Main Parameters
 """
 
 # ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
 md"""
 # Warnings
-"""
-
-# ╔═╡ f0590b8f-42a0-435d-a4fa-5f9cf206235a
-md"""
-# Main Outputs
 """
 
 # ╔═╡ 4fddac82-52f3-464f-874f-056e8f165ba0
@@ -94,21 +84,23 @@ md"""
 
 # ╔═╡ f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
 md"""
-# Calculations
+# Notebook Engine
 """
 
 # ╔═╡ ea2ec22b-69ab-40d6-b8ea-704e4e6c3de8
 md"""
 !!! danger "Danger Zone!"
 	\
-	**Don't edit past here unless you know what you're doing** 😀
+	\
+	**Don't edit anything after this point unless you know what you're doing!** 😀
+	\
 	\
 	\
 """
 
 # ╔═╡ 10a16ae5-044a-47e2-8964-13b334f5d0a8
 md"""
-### Front Matter
+## Front Matter
 """
 
 # ╔═╡ 1b874c8c-08dd-4064-9afc-d62b2e900921
@@ -119,15 +111,31 @@ begin
 		main {
 			margin: 0 auto;
 			max-width: 2000px;
-	    	padding-left: max(160px, 30%);
-	    	padding-right: max(160px, 15%);
+	    	padding-left: 31%;
+	    	padding-right: 20%;
 		}
 	</style>
 	"""
 end
 
-# ╔═╡ ba7f1881-f079-4ef5-9231-84dcf8584323
-TableOfContents(depth = 2)
+# ╔═╡ 8638b7a5-1ee0-47d2-aa6b-54cc9ab996ff
+begin
+
+@info "Hiding header"
+
+html"""
+<style>
+    header {
+		display:none
+    }
+</style>
+"""
+end
+
+# ╔═╡ 7ca9e647-d06e-4815-b30b-eb1a4e5f1577
+md"""
+## Simulation
+"""
 
 # ╔═╡ 65b2ceb8-40d4-4f97-9541-36e0023c5d6b
 md"""
@@ -166,8 +174,27 @@ md"""
 
 # ╔═╡ 7d0b8d87-d783-467b-8240-deaa2e88963d
 md"""
-### Plotting
+## Display
 """
+
+# ╔═╡ 58d3a9da-c4df-4ec3-953e-1946495945bc
+begin
+	@info "Defining inspected plot options."
+	
+	local ui_inspect_plot(Child) = md"""
+		Plot type: $(Child(Select(["Trajectories", "Heat Map"], default = "Trajectories"))) \
+		Lon min: $(Child(TextField(4, default = "-100"))) Lon max: $(Child(TextField(4, default = "-40"))) \
+		Lat min: $(Child(TextField(4, default = "0"))) Lat max: $(Child(TextField(4, default = "40")))
+		\
+		\
+		"""
+	global plot_window = @bind plot_params confirm(PlutoUI.combine() do Child
+		ui_inspect_plot(Child)
+	end,
+	label = "APPLY")
+
+	nothing
+end
 
 # ╔═╡ c29585d8-885c-4b5a-b530-9d34ec8daeb2
 md"""
@@ -176,16 +203,25 @@ md"""
 
 # ╔═╡ 154d4bd2-85c9-41dd-a68e-1f9028c55500
 md"""
-### Exporting
+## Exporting
 """
 
 # ╔═╡ e90936ec-f215-4a03-bd75-da2df6308ed0
 md"""
-### Utilities
+## Utilities
 """
 
 # ╔═╡ 67c5ed03-7e1b-4c4d-8fa1-837848a37924
 ad(text, kind) = Markdown.MD(Markdown.Admonition(kind, "", [text]))
+
+# ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
+begin
+	local blurb = md"""
+	This is the interface to the `SargassumBOMB.jl` package and companion packages.
+	"""
+	
+	ad(details("TUTORIAL (click me!)", blurb), "tip")
+end
 
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 begin
@@ -726,32 +762,32 @@ begin
 	end
 end
 
-# ╔═╡ 330b226f-6b74-465b-a0b3-ba398e6d9928
+# ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
 begin
+	@info "Defining notebook info box."
+
 	local blurb = md"""
-	These settings control how the main integration plot is displayed.
+	This is a [Pluto notebook](https://plutojl.org/) powered by the [Julia programming language](https://julialang.org/).
 
-	There are two plot types, `"Trajectories"` and `"Heat Map"`.
-
-	`"Trajectories"` shows the individual clump trajectories.
-
-	`"Heat Map"` shows the trajectories binned by counts.
+	- [GitHub](https://github.com/70Gage70/SargassumInterface.jl)
+	- [How to cite](https://github.com/70Gage70/SargassumInterface.jl)
 	"""
-	ad(
-		md""" 
-		## Integration Plot
-		$(details("HELP", blurb))""", 
-	"tip")
-end
 
-# ╔═╡ ce4b7abc-f950-482a-8e85-c5fa17937b1b
-begin
-		
-	local blurb = md"""
-		### Plot type: $(@bind plot_type Select(["Trajectories", "Heat Map"], default = "Trajectories"))
-		"""
-	ad(blurb, "info")
-
+	local blah = ad(
+		details("ABOUT", [blurb], open = true), 
+	"warning")
+	
+	@htl """<div style="
+	position: fixed; 
+	right: 1rem; 
+	top: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 99;
+	max-width: 18%;
+	background-color: var(--main-bg-color);">
+	$(blah)
+	</div>"""
 end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
@@ -766,7 +802,7 @@ begin
 	
 	local plot_box = ad(
 	md"""
-	Click to calculate: $(@bind trigger_calculation CheckBox(default=false))
+	Run simulation: $(@bind trigger_calculation CheckBox(default=false))
 	""", 
 	"danger")
 
@@ -777,7 +813,8 @@ begin
 	padding: 1px;
 	text-align: left;
 	z-index: 100;
-	max-width: 10%;
+	max-width: 20%;
+	max-height: 10%;
 	background-color: var(--main-bg-color);">
 	$(plot_box)
 	</div>"""
@@ -802,81 +839,18 @@ begin
 	end
 end
 
-# ╔═╡ 945696be-8ff9-49f8-bbe2-d3d0e7849019
-begin
-	
-	local blurb = md"""
-		Blah
-	"""
-	local ui_integration_export(Child) = md"""
-		Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
-
-		Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
-		\
-		\
-		Directory: $(Child(TextField(100, default = @__DIR__))) \
-		Name: $(Child(TextField(100, default = "my_file_name"))) \
-		Export Type: $(Child(Select([".mat", ".nc"], default = ".mat")))
-		"""
-
-	try
-		sol
-		
-		@bind integration_export_parameters PlutoUI.combine() do Child
-			ad(details("Exporting Data", ui_integration_export(Child)), "info")
-		end
-	catch
-		nothing
-	end
-end
-
-# ╔═╡ 45937442-c34d-40cb-9f4c-9fa5948082d4
-begin
-	try
-		sol
-		
-		local blurb = md"""
-			Click to export: $(@bind export_integration_data PlutoUI.Button("EXPORT"))
-			"""
-		ad(blurb, "danger")
-	catch
-		nothing
-	end
-
-end
-
-# ╔═╡ c3a3cf4f-df2e-493a-871b-5de61336de16
-EXPORT_CHECKER = [export_integration_data];
-
-# ╔═╡ 5fa34147-a71a-43bb-8f5f-689d830508b3
-begin
-	if EXPORT_CHECKER[1] == "EXPORT"
-		EXPORT_CHECKER[1] = "NO EXPORT"
-
-		try
-		
-			local outfile = joinpath(integration_export_parameters[1], integration_export_parameters[2] * integration_export_parameters[3])
-	
-			if integration_export_parameters[3] == ".mat"
-				rtr2mat(sol, outfile)
-			elseif integration_export_parameters[3] == ".nc"
-				rtr2nc(sol, outfile, range(-100.0, -40.0, length = 134), range(-100.0, -40.0, length = 64))
-			end
-		catch
-			nothing
-		end
-	end
-end
-
 # ╔═╡ 846659d3-e922-4aed-90ff-0cbab92b1639
 begin
 
-@info "Defining plot window."
+@info "Defining main plot + small window."
 	
 let
 	try
+		plot_type = plot_params[1]
+		lon_min, lon_max, lat_min, lat_max = plot_params[2:5] .|> x -> parse(Float64, x)
+		
 		global fig = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax = geo_axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
+		ax = geo_axis(fig[1, 1], limits = (lon_min, lon_max, lat_min, lat_max), title = "", labelscale = 1.0)
 		if plot_type == "Trajectories"
 			trajectory!(ax, sol)
 		elseif plot_type == "Heat Map"
@@ -901,6 +875,188 @@ let
 end
 end
 
+# ╔═╡ 78a2638f-f10e-443f-835e-0c8454981617
+begin
+	@info "Defining inspect plot trigger."
+	
+	global plot_box = ad(
+	md"""
+	Inspect/export: $(@bind inspect_plot CheckBox(default=false))
+	""", 
+	"danger")
+
+	nothing
+end
+
+# ╔═╡ 76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
+begin
+
+@info "Defining inspect plot trigger window."
+	
+if trigger_calculation
+
+	@htl """<div style="
+	position: fixed; 
+	left: 12rem; 
+	top: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 20%;
+	max-height: 10%;
+	background-color: var(--main-bg-color);">
+	$(plot_box)
+	</div>"""
+end
+end
+
+# ╔═╡ 32f6f7a5-19b7-4c71-9d0a-865d4f6d0506
+begin
+
+@info "Defining inspected plot background 1."
+	
+if inspect_plot && trigger_calculation
+
+@htl """<div style="
+position: fixed; 
+left: 1rem; 
+top: 6rem; 
+padding: 1000px;
+text-align: left;
+z-index: 100;
+max-width: 75%;
+background-color: var(--main-bg-color);">
+</div>"""
+
+end
+end
+
+# ╔═╡ a9741ea1-32b7-477a-be23-a3f74fe8c359
+begin
+
+@info "Defining inspected plot background 2."
+	
+if inspect_plot && trigger_calculation
+
+@htl """<div style="
+position: fixed; 
+right: 1rem; 
+top: 0rem; 
+padding: 35%;
+text-align: left;
+z-index: 100;
+max-width: 20%;
+background-color: var(--main-bg-color);">
+</div>"""
+
+end
+end
+
+# ╔═╡ b4a1e899-a142-4513-aa1b-3f65bcdd0b74
+begin
+
+@info "Defining inspected plot."
+	
+if inspect_plot && trigger_calculation
+
+@htl """<div style="
+position: fixed; 
+left: 1rem; 
+top: 6rem; 
+padding: 1px;
+text-align: left;
+z-index: 101;
+max-width: 75%;
+background-color: var(--main-bg-color);">
+$(fig)
+</div>"""
+
+end
+end
+
+# ╔═╡ e75adad7-7416-4962-9308-44e1425a8ff3
+begin
+	@info "Defining inspected plot options window."
+
+	if inspect_plot && trigger_calculation
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 6rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 101;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		$(ad(plot_window, "info"))
+		</div>"""
+	end
+end
+
+# ╔═╡ a7de95ce-62b9-40e6-a7f5-1d833bedff87
+begin
+	@info "Defining export options window."
+
+	local export_details = md"""
+	Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
+
+	Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
+	"""
+	
+	local ui_integration_export(Child) = md"""
+		$(details("EXPORT HELP", export_details))
+		Directory \
+		$(Child(TextField((30, 2), default = @__DIR__))) \
+		Name
+		$(Child(TextField(10, default = "my_file_name"))) \
+		Export Type: $(Child(Select([".mat", ".nc"], default = ".mat")))
+		"""
+
+	try
+		sol;
+		
+		export_blurb = @bind integration_export_parameters confirm(PlutoUI.combine() do Child
+			 ui_integration_export(Child)
+		end,
+		label = "EXPORT")
+
+		global export_options = ad(export_blurb, "info")
+	catch
+		nothing
+	end
+	
+	if inspect_plot && trigger_calculation
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 16rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 101;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		$(export_options)
+		</div>"""
+	end
+end
+
+# ╔═╡ 5fa34147-a71a-43bb-8f5f-689d830508b3
+begin
+	@info "Exporting"
+	try
+	
+		local outfile = joinpath(integration_export_parameters[1], integration_export_parameters[2] * integration_export_parameters[3])
+
+		if integration_export_parameters[3] == ".mat"
+			rtr2mat(sol, outfile)
+		elseif integration_export_parameters[3] == ".nc"
+			rtr2nc(sol, outfile, range(-100.0, -40.0, length = 134), range(-100.0, -40.0, length = 64))
+		end
+	catch
+		nothing
+	end
+end
+
 # ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
 begin
 	@info "Defining AFAI parameter window."
@@ -909,7 +1065,8 @@ begin
 		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
 		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
 		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
-		Scale: $(Child(Select(["Log", "Linear"], default = "Log")))
+		Scale: $(Child(Select(["Log", "Linear"], default = "Log"))) \
+		Show: $(Child(CheckBox(default = true)))
 		"""
 	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
 		ad(ui_afai_plot(Child), "info")
@@ -918,11 +1075,12 @@ begin
 	@htl """<div style="
 	position: fixed; 
 	left: 1rem; 
-	bottom: 1rem; 
+	bottom: 3rem; 
 	padding: 1px;
 	text-align: left;
-	z-index: 100;
-	max-width: 15%;
+	z-index: 98;
+	max-width: 24%;
+	max-height: 20%;
 	background-color: var(--main-bg-color);">
 	$(afai_params)
 	</div>"""
@@ -931,13 +1089,14 @@ end
 # ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
 begin
 
-@info "Defining AFAI window."
+@info "Defining AFAI plot window."
 	
 let
+if afai_plot_params[5]
 	try
 		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
 		ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
-		local date, week, clouds, scale = afai_plot_params
+		local date, week, clouds, scale = afai_plot_params[1:4]
 		local date = DateTime(date, "yyyy-mm") |> yearmonth
 		local week = parse(Int64, week)
 		SargassumFromAFAI.plot!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
@@ -953,15 +1112,17 @@ let
 	bottom: 10rem; 
 	padding: 1px;
 	text-align: center;
-	z-index: 100;
+	z-index: 99;
 	max-width: 27%;
 	background-color: var(--main-bg-color);">
 	$(fig_afai)
 	</div>"""
 end
 end
+end
 
 # ╔═╡ Cell order:
+# ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 # ╟─a5e1070c-5f0a-44b6-8a43-451ffce19e73
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
@@ -985,21 +1146,18 @@ end
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
 # ╟─5401dc9a-a647-4722-b49d-21023b829cb3
 # ╟─0eaba7b9-5bfc-44b3-a99a-8b240a952e02
-# ╠═da645592-41d8-4212-8ca0-241923f2dc14
-# ╟─f0590b8f-42a0-435d-a4fa-5f9cf206235a
-# ╟─330b226f-6b74-465b-a0b3-ba398e6d9928
-# ╟─ce4b7abc-f950-482a-8e85-c5fa17937b1b
-# ╟─945696be-8ff9-49f8-bbe2-d3d0e7849019
-# ╟─45937442-c34d-40cb-9f4c-9fa5948082d4
+# ╟─da645592-41d8-4212-8ca0-241923f2dc14
 # ╟─4fddac82-52f3-464f-874f-056e8f165ba0
 # ╟─d512eee1-890c-40ce-ab0e-54d1004ad5d2
 # ╟─f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
 # ╟─ea2ec22b-69ab-40d6-b8ea-704e4e6c3de8
 # ╟─10a16ae5-044a-47e2-8964-13b334f5d0a8
 # ╟─1b874c8c-08dd-4064-9afc-d62b2e900921
-# ╠═ba7f1881-f079-4ef5-9231-84dcf8584323
+# ╟─8638b7a5-1ee0-47d2-aa6b-54cc9ab996ff
+# ╟─084700f3-4f35-466f-91e1-f4853c426abf
 # ╟─589f251d-a2df-4879-9933-4deb95a8003a
 # ╟─d1565b62-ce6e-4e07-a041-f15e4fcc118b
+# ╟─7ca9e647-d06e-4815-b30b-eb1a4e5f1577
 # ╟─65b2ceb8-40d4-4f97-9541-36e0023c5d6b
 # ╟─2c38594d-7d78-49d8-9597-0b723f56e76f
 # ╟─8ba55d2d-53fa-4206-872c-0470e76fcf6b
@@ -1017,11 +1175,18 @@ end
 # ╟─7d0b8d87-d783-467b-8240-deaa2e88963d
 # ╟─e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
 # ╟─846659d3-e922-4aed-90ff-0cbab92b1639
+# ╟─78a2638f-f10e-443f-835e-0c8454981617
+# ╟─76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
+# ╟─32f6f7a5-19b7-4c71-9d0a-865d4f6d0506
+# ╟─a9741ea1-32b7-477a-be23-a3f74fe8c359
+# ╟─b4a1e899-a142-4513-aa1b-3f65bcdd0b74
+# ╟─58d3a9da-c4df-4ec3-953e-1946495945bc
+# ╟─e75adad7-7416-4962-9308-44e1425a8ff3
+# ╟─a7de95ce-62b9-40e6-a7f5-1d833bedff87
 # ╟─c29585d8-885c-4b5a-b530-9d34ec8daeb2
 # ╟─d31c10fc-1d99-4d49-9a28-111b993d0936
 # ╟─4ff1d478-90de-42ad-af3c-7085cec44e41
 # ╟─154d4bd2-85c9-41dd-a68e-1f9028c55500
-# ╠═c3a3cf4f-df2e-493a-871b-5de61336de16
 # ╟─5fa34147-a71a-43bb-8f5f-689d830508b3
 # ╟─e90936ec-f215-4a03-bd75-da2df6308ed0
 # ╟─67c5ed03-7e1b-4c4d-8fa1-837848a37924
