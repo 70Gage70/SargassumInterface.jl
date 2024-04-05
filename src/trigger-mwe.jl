@@ -17,6 +17,7 @@ end
 # ╔═╡ b7252fef-228e-4eb9-a163-0ced9f877cf0
 begin
 	using PlutoUI
+	using PlutoUIExtra
 	using GLMakie
 	using HypertextLiteral
 end
@@ -116,11 +117,13 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+PlutoUIExtra = "a011ac08-54e6-4ec3-ad1c-4165f16ac4ce"
 
 [compat]
 GLMakie = "~0.9.9"
 HypertextLiteral = "~0.9.5"
 PlutoUI = "~0.7.58"
+PlutoUIExtra = "~0.1.6"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -129,7 +132,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "4daa82d28cd1d55fc879805245197f539fe4ba7d"
+project_hash = "266d44c7e2eef040552123e2442ba7d0635a79bc"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -157,6 +160,27 @@ version = "1.3.0"
 git-tree-sha1 = "2d9c9a55f9c93e8887ad391fbae72f8ef55e1177"
 uuid = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 version = "0.4.5"
+
+[[deps.Accessors]]
+deps = ["CompositionsBase", "ConstructionBase", "Dates", "InverseFunctions", "LinearAlgebra", "MacroTools", "Markdown", "Test"]
+git-tree-sha1 = "c0d491ef0b135fd7d63cbc6404286bc633329425"
+uuid = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
+version = "0.1.36"
+
+    [deps.Accessors.extensions]
+    AccessorsAxisKeysExt = "AxisKeys"
+    AccessorsIntervalSetsExt = "IntervalSets"
+    AccessorsStaticArraysExt = "StaticArrays"
+    AccessorsStructArraysExt = "StructArrays"
+    AccessorsUnitfulExt = "Unitful"
+
+    [deps.Accessors.weakdeps]
+    AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+    StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+    Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -330,6 +354,15 @@ deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.1.0+0"
 
+[[deps.CompositionsBase]]
+git-tree-sha1 = "802bb88cd69dfd1509f6670416bd4434015693ad"
+uuid = "a33af91c-f02d-484b-be07-31d278c5ca2b"
+version = "0.1.2"
+weakdeps = ["InverseFunctions"]
+
+    [deps.CompositionsBase.extensions]
+    CompositionsBaseInverseFunctionsExt = "InverseFunctions"
+
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "260fd2400ed2dab602a7c15cf10c1933c59930a2"
@@ -350,6 +383,11 @@ version = "0.6.2"
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.16.0"
+
+[[deps.DataPipes]]
+git-tree-sha1 = "64ae76311a9e3a300ccabc1d8d5d4d36b9d047c7"
+uuid = "02685ad9-2d12-40c3-9f73-c6aeda6a7ff5"
+version = "0.3.14"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -521,6 +559,24 @@ deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
 uuid = "53c48c17-4a7d-5ca2-90c5-79b7896eea93"
 version = "0.8.4"
+
+[[deps.FlexiMaps]]
+deps = ["Accessors", "DataPipes", "InverseFunctions"]
+git-tree-sha1 = "b10d103acab2d5fef4a4136309f491292895de63"
+uuid = "6394faf6-06db-4fa8-b750-35ccc60383f7"
+version = "0.1.25"
+
+    [deps.FlexiMaps.extensions]
+    AxisKeysExt = "AxisKeys"
+    DictionariesExt = "Dictionaries"
+    IntervalSetsExt = "IntervalSets"
+    StructArraysExt = "StructArrays"
+
+    [deps.FlexiMaps.weakdeps]
+    AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
+    Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+    IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+    StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [[deps.Fontconfig_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Expat_jll", "FreeType2_jll", "JLLWrappers", "Libdl", "Libuuid_jll", "Pkg", "Zlib_jll"]
@@ -755,6 +811,16 @@ weakdeps = ["Random", "RecipesBase", "Statistics"]
     IntervalSetsRandomExt = "Random"
     IntervalSetsRecipesBaseExt = "RecipesBase"
     IntervalSetsStatisticsExt = "Statistics"
+
+[[deps.InverseFunctions]]
+deps = ["Test"]
+git-tree-sha1 = "896385798a8d49a255c398bd49162062e4a4c435"
+uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
+version = "0.1.13"
+weakdeps = ["Dates"]
+
+    [deps.InverseFunctions.extensions]
+    DatesExt = "Dates"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "630b497eafcc20001bba38a4651b327dcfc491d2"
@@ -1226,6 +1292,12 @@ git-tree-sha1 = "71a22244e352aa8c5f0f2adde4150f62368a3f2e"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.58"
 
+[[deps.PlutoUIExtra]]
+deps = ["AbstractPlutoDingetjes", "FlexiMaps", "HypertextLiteral", "InteractiveUtils", "IntervalSets", "Markdown", "PlutoUI", "Random", "Reexport"]
+git-tree-sha1 = "ce98462ba6d77adf4b1b3eba4f391df8acb694fd"
+uuid = "a011ac08-54e6-4ec3-ad1c-4165f16ac4ce"
+version = "0.1.6"
+
 [[deps.PolygonOps]]
 git-tree-sha1 = "77b3d3605fc1cd0b42d95eba87dfcd2bf67d5ff6"
 uuid = "647866c9-e3ac-4575-94e7-e3d426903924"
@@ -1515,14 +1587,11 @@ deps = ["HypergeometricFunctions", "IrrationalConstants", "LogExpFunctions", "Re
 git-tree-sha1 = "cef0472124fab0695b58ca35a77c6fb942fdab8a"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
 version = "1.3.1"
+weakdeps = ["ChainRulesCore", "InverseFunctions"]
 
     [deps.StatsFuns.extensions]
     StatsFunsChainRulesCoreExt = "ChainRulesCore"
     StatsFunsInverseFunctionsExt = "InverseFunctions"
-
-    [deps.StatsFuns.weakdeps]
-    ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-    InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
 
 [[deps.StructArrays]]
 deps = ["ConstructionBase", "DataAPI", "Tables"]
@@ -1812,7 +1881,7 @@ version = "3.5.0+0"
 # ╟─0ec9b8fe-f2a9-11ee-21ad-ab671e647352
 # ╟─59564c51-6694-4c00-b532-9921b656e69b
 # ╟─8439d9e9-c4b2-49b0-a3aa-a609de24397c
-# ╟─96b94d41-52b6-4e49-991e-544f90bac115
+# ╠═96b94d41-52b6-4e49-991e-544f90bac115
 # ╟─02a14860-adf6-43cc-9974-0fac089f4db5
 # ╟─f63002e7-c8be-4ba5-a4b3-49767baa7e04
 # ╠═181dc26c-1885-4986-81a0-7b2489aedd51

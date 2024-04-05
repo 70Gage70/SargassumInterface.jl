@@ -25,9 +25,9 @@ end
 begin
 	using SargassumBOMB
 	using SargassumFromAFAI
-	using WGLMakie
+	using GLMakie
 	using Dates
-	using PlutoUI
+	using PlutoUI, HypertextLiteral
 	@info "Loaded dependencies."
 end
 
@@ -113,14 +113,14 @@ md"""
 
 # ╔═╡ 1b874c8c-08dd-4064-9afc-d62b2e900921
 begin
-	@info "Maximizing notebook width."
+	@info "Setting notebook width."
 	html"""
 	<style>
 		main {
 			margin: 0 auto;
 			max-width: 2000px;
-	    	padding-left: max(160px, 10%);
-	    	padding-right: max(160px, 10%);
+	    	padding-left: max(160px, 30%);
+	    	padding-right: max(160px, 15%);
 		}
 	</style>
 	"""
@@ -162,6 +162,16 @@ md"""
 # ╔═╡ fb9970b9-25a9-4235-a01c-5f4b6b2b2580
 md"""
 ### Integration
+"""
+
+# ╔═╡ 7d0b8d87-d783-467b-8240-deaa2e88963d
+md"""
+### Plotting
+"""
+
+# ╔═╡ c29585d8-885c-4b5a-b530-9d34ec8daeb2
+md"""
+### Sargassum Distribution
 """
 
 # ╔═╡ 154d4bd2-85c9-41dd-a68e-1f9028c55500
@@ -608,7 +618,6 @@ begin
 	end
 
 	# check connections parameters
-
 	if conn_type == "Nearest"
 		try
 			local param = parse(Int64, conn_params[1])
@@ -747,19 +756,38 @@ end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
 begin
-	local blurb = md"""
-		Click to plot: $(@bind recompute_plot Button("PLOT"))
-		"""
-	ad(blurb, "danger")
-end
+	@info "Defining reactive plot checkbox."
+	ics;
+	clumps;
+	springs;
+	connections;
+	gd_model;
+	land;
+	
+	local plot_box = ad(
+	md"""
+	Click to calculate: $(@bind trigger_calculation CheckBox(default=false))
+	""", 
+	"danger")
 
-# ╔═╡ 336806cd-70d4-4fbc-9907-2e28e6dafad5
-PLOT_TRACKER = [recompute_plot];
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	top: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 10%;
+	background-color: var(--main-bg-color);">
+	$(plot_box)
+	</div>"""
+end
 
 # ╔═╡ d355db80-b403-4200-a4b4-a6eb6f13a79e
 begin
-	if PLOT_TRACKER[1] == "PLOT"
-		PLOT_TRACKER[1] = "NO PLOT"
+	@info "Calculating integration."
+	
+	if trigger_calculation
 
 		rp = RaftParameters(
 			ics = ics,
@@ -772,25 +800,6 @@ begin
 		
 		sol = simulate(rp, showprogress = false)
 	end
-end
-
-# ╔═╡ 88ccf329-00b4-48cb-a378-1d67cc98f63b
-begin
-let
-	try
-		fig = Figure(size = (800, 400), figure_padding = (10, 40, 10, 10))
-		ax = geo_axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 0.5)
-		if plot_type == "Trajectories"
-			trajectory!(ax, sol)
-		elseif plot_type == "Heat Map"
-			trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
-		end
-		land!(ax)
-		fig
-	catch
-		ad(md"""The plot has not been generated yet or the integration parameters have changed. Click the `"PLOT"` button to remake the plot.""", "warning")
-	end
-end
 end
 
 # ╔═╡ 945696be-8ff9-49f8-bbe2-d3d0e7849019
@@ -827,7 +836,7 @@ begin
 		sol
 		
 		local blurb = md"""
-			Click to export: $(@bind export_integration_data Button("EXPORT"))
+			Click to export: $(@bind export_integration_data PlutoUI.Button("EXPORT"))
 			"""
 		ad(blurb, "danger")
 	catch
@@ -859,67 +868,97 @@ begin
 	end
 end
 
-# ╔═╡ a3e502a7-fa6b-40bf-8a5a-a1f2d5802f42
+# ╔═╡ 846659d3-e922-4aed-90ff-0cbab92b1639
 begin
-	local blurb = md"""
-	These settings control how the Sargassum distribution (calculated from AFAI data) is displayed.
 
-	- `"Date"`: The year and month of the distribution (currently only certain months of 2017 and 2018 are available).
-	- `"Week"`: The week of the month to show the distribution on; each distribution is the total for that week.
-	- `"Clouds"`: Whether or not to show pixels covered by clouds.
-	- `"Scale"`: Whether or use a linear or logarithmic scale for the heat map.
-	"""
-	ad(
-		md""" 
-		## Sargassum Distribution (from AFAI) Plot
-		$(details("HELP", blurb))""", 
-	"tip")
+@info "Defining plot window."
+	
+let
+	try
+		global fig = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
+		ax = geo_axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
+		if plot_type == "Trajectories"
+			trajectory!(ax, sol)
+		elseif plot_type == "Heat Map"
+			trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
+		end
+		land!(ax)
+	catch
+		global fig = ad(md"""The plot has not been generated yet or the integration parameters have changed.""", "warning")
+	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	top: 6rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(fig)
+	</div>"""
+end
 end
 
-# ╔═╡ 45234407-bbde-467e-b6fc-708e6e9f5d97
+# ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
 begin
-
+	@info "Defining AFAI parameter window."
+	
 	local ui_afai_plot(Child) = md"""
-		Date (yyyy-mm): $(Child(TextField(default = "2018-04"))) \
+		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
 		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
 		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
 		Scale: $(Child(Select(["Log", "Linear"], default = "Log")))
 		"""
-	@bind afai_plot_params PlutoUI.combine() do Child
+	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
 		ad(ui_afai_plot(Child), "info")
 	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 15%;
+	background-color: var(--main-bg-color);">
+	$(afai_params)
+	</div>"""
 end
 
-# ╔═╡ afd7ed42-0297-4618-a44f-08d109954724
+# ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
 begin
-	local date, week, scale = afai_plot_params
-	local date = DateTime(date, "yyyy-mm") |> yearmonth
-	if !(date in keys(SargassumFromAFAI.DIST_1718))
-		@warn "The AFAI distribution at this date is not one of the pre-computed distributions (2017 - 2018, months where available)."
-	end
-end
 
-# ╔═╡ d0c59a14-1800-4659-95d2-76778af72ef4
-begin
-	local blurb = md"""
-		### Show Sargassum distribution: $(@bind show_afai_plot CheckBox(default = false))
-		"""
-	ad(blurb, "danger")
-end
-
-# ╔═╡ 201ffe60-8dc4-4b1d-8db1-52b3646f90a9
-begin
-	if show_afai_plot
-		fig_afai = Figure(size = (800, 400), figure_padding = (10, 40, 10, 10))
-		ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 0.5)
+@info "Defining AFAI window."
+	
+let
+	try
+		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
+		ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
 		local date, week, clouds, scale = afai_plot_params
 		local date = DateTime(date, "yyyy-mm") |> yearmonth
 		local week = parse(Int64, week)
 		SargassumFromAFAI.plot!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
 		clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
 		land!(ax_afai)
-		fig_afai
+	catch
+		global fig_afai = ad(md"""Date out of range! Currently certain months in 2017 and 2018 are supported.""", "warning")
 	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 10rem; 
+	padding: 1px;
+	text-align: center;
+	z-index: 100;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(fig_afai)
+	</div>"""
+end
 end
 
 # ╔═╡ Cell order:
@@ -946,20 +985,13 @@ end
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
 # ╟─5401dc9a-a647-4722-b49d-21023b829cb3
 # ╟─0eaba7b9-5bfc-44b3-a99a-8b240a952e02
-# ╟─da645592-41d8-4212-8ca0-241923f2dc14
+# ╠═da645592-41d8-4212-8ca0-241923f2dc14
 # ╟─f0590b8f-42a0-435d-a4fa-5f9cf206235a
 # ╟─330b226f-6b74-465b-a0b3-ba398e6d9928
 # ╟─ce4b7abc-f950-482a-8e85-c5fa17937b1b
-# ╟─e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
-# ╟─88ccf329-00b4-48cb-a378-1d67cc98f63b
 # ╟─945696be-8ff9-49f8-bbe2-d3d0e7849019
 # ╟─45937442-c34d-40cb-9f4c-9fa5948082d4
 # ╟─4fddac82-52f3-464f-874f-056e8f165ba0
-# ╟─a3e502a7-fa6b-40bf-8a5a-a1f2d5802f42
-# ╟─45234407-bbde-467e-b6fc-708e6e9f5d97
-# ╟─d0c59a14-1800-4659-95d2-76778af72ef4
-# ╟─afd7ed42-0297-4618-a44f-08d109954724
-# ╟─201ffe60-8dc4-4b1d-8db1-52b3646f90a9
 # ╟─d512eee1-890c-40ce-ab0e-54d1004ad5d2
 # ╟─f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
 # ╟─ea2ec22b-69ab-40d6-b8ea-704e4e6c3de8
@@ -981,8 +1013,13 @@ end
 # ╟─7aea397d-a1b3-4e2d-a265-3b528762415c
 # ╟─4568d0b9-e6a2-4653-abc5-44e229cc3ded
 # ╟─fb9970b9-25a9-4235-a01c-5f4b6b2b2580
-# ╠═336806cd-70d4-4fbc-9907-2e28e6dafad5
 # ╟─d355db80-b403-4200-a4b4-a6eb6f13a79e
+# ╟─7d0b8d87-d783-467b-8240-deaa2e88963d
+# ╟─e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
+# ╟─846659d3-e922-4aed-90ff-0cbab92b1639
+# ╟─c29585d8-885c-4b5a-b530-9d34ec8daeb2
+# ╟─d31c10fc-1d99-4d49-9a28-111b993d0936
+# ╟─4ff1d478-90de-42ad-af3c-7085cec44e41
 # ╟─154d4bd2-85c9-41dd-a68e-1f9028c55500
 # ╠═c3a3cf4f-df2e-493a-871b-5de61336de16
 # ╟─5fa34147-a71a-43bb-8f5f-689d830508b3
