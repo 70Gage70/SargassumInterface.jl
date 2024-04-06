@@ -816,7 +816,7 @@ begin
 	"""
 
 	local blah = ad(
-		details("ABOUT", [blurb], open = true), 
+		details("ABOUT/CITE", [blurb], open = false), 
 	"warning")
 	
 	@htl """<div style="
