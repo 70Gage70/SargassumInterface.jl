@@ -34,19 +34,41 @@ end
 # ╔═╡ 7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 
 
-# ╔═╡ a5e1070c-5f0a-44b6-8a43-451ffce19e73
-md"""
-# SargassumBOMB Interface
-"""
-
 # ╔═╡ c3eddd51-43c4-42f4-800a-ae9945df1e86
 md"""
-# Main Parameters
+---
+---
 """
 
-# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
+# ╔═╡ 81769b34-5373-43fe-88ef-82bb3a714ff6
 md"""
-# Warnings
+---
+"""
+
+# ╔═╡ 3770ede8-77e4-47e3-bb70-6fd4d486d0b7
+md"""
+---
+"""
+
+# ╔═╡ e0d8925d-cc12-4a72-a383-93f07cb3d495
+md"""
+---
+"""
+
+# ╔═╡ 9b647b4f-233f-4795-8760-7472eeea422d
+md"""
+---
+"""
+
+# ╔═╡ df24d7ca-2143-481d-80fe-b8f31f0a3bb8
+md"""
+---
+"""
+
+# ╔═╡ 66c7f34f-378d-4a37-a112-5032c4cf07a4
+md"""
+---
+---
 """
 
 # ╔═╡ 4fddac82-52f3-464f-874f-056e8f165ba0
@@ -84,7 +106,7 @@ md"""
 
 # ╔═╡ f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
 md"""
-# Notebook Engine
+# Interface Engine
 """
 
 # ╔═╡ ea2ec22b-69ab-40d6-b8ea-704e4e6c3de8
@@ -217,10 +239,23 @@ ad(text, kind) = Markdown.MD(Markdown.Admonition(kind, "", [text]))
 # ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
 begin
 	local blurb = md"""
-	This is the interface to the `SargassumBOMB.jl` package and companion packages.
+	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
+
+	All of the integration parameters are set in this column. Scroll down to see them all, and click the `HELP` boxes for further explanation. At the bottom, there is a section for warnings. If things aren't working, check there.
+
+	The main integration plot is displayed on the upper left of the screen. When parameters are changed, the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
+
+	To take a closer look at the plot, click `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and an interface for exporting your simulation data.
+
+	At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
+	"""
+
+	local blurb2 = md"""
+	# SargassumBOMB Interface
+	$(details("Click me for tutorial!", blurb))
 	"""
 	
-	ad(details("TUTORIAL (click me!)", blurb), "tip")
+	ad(blurb2, "tip")
 end
 
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
@@ -323,7 +358,11 @@ begin
 end
 
 # ╔═╡ a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
-ad(md"""**Total clumps: $(n_clumps(ics.ics))**""", "info")
+try
+	ad(md"""**Total clumps: $(n_clumps(ics.ics))**""", "info")
+catch
+	ad(md"""**Total clumps: ERROR**""", "info")
+end
 
 # ╔═╡ 75898dc7-beec-4c4d-8580-79ec1df8cc42
 begin
@@ -755,6 +794,9 @@ begin
 	land
 end
 
+# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
+ad(md""" # Warnings """, "warning")
+
 # ╔═╡ 0eaba7b9-5bfc-44b3-a99a-8b240a952e02
 begin
 	if warnings_q == 0
@@ -1062,11 +1104,11 @@ begin
 	@info "Defining AFAI parameter window."
 	
 	local ui_afai_plot(Child) = md"""
+		Show satellite data: $(Child(CheckBox(default = false))) \
 		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
 		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
 		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
 		Scale: $(Child(Select(["Log", "Linear"], default = "Log"))) \
-		Show: $(Child(CheckBox(default = true)))
 		"""
 	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
 		ad(ui_afai_plot(Child), "info")
@@ -1092,11 +1134,11 @@ begin
 @info "Defining AFAI plot window."
 	
 let
-if afai_plot_params[5]
+if afai_plot_params[1]
 	try
 		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
 		ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
-		local date, week, clouds, scale = afai_plot_params[1:4]
+		local date, week, clouds, scale = afai_plot_params[2:5]
 		local date = DateTime(date, "yyyy-mm") |> yearmonth
 		local week = parse(Int64, week)
 		SargassumFromAFAI.plot!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
@@ -1123,7 +1165,6 @@ end
 
 # ╔═╡ Cell order:
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
-# ╟─a5e1070c-5f0a-44b6-8a43-451ffce19e73
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
@@ -1132,18 +1173,24 @@ end
 # ╟─ed4f082b-237c-4b08-b3b9-2f1846b0ecfb
 # ╟─c75d9b70-d3bb-41fe-84bf-53c0ab41f406
 # ╟─a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
+# ╟─81769b34-5373-43fe-88ef-82bb3a714ff6
 # ╟─75898dc7-beec-4c4d-8580-79ec1df8cc42
 # ╟─489fe878-3ac1-4e18-a185-7d4f1f6679d0
+# ╟─3770ede8-77e4-47e3-bb70-6fd4d486d0b7
 # ╟─6bda3ba9-fbba-4ce5-8a23-0c606845b31a
 # ╟─7d5f16a6-9ce9-45c0-9483-24f44a23bd45
+# ╟─e0d8925d-cc12-4a72-a383-93f07cb3d495
 # ╟─c60bb5f5-82b7-484c-b56b-ded74a1e651f
 # ╟─e1fd0825-6b16-4fb6-9358-4252b1bd77e9
 # ╟─3b123c70-d3b9-4b3d-8c38-f4d3457f079d
+# ╟─9b647b4f-233f-4795-8760-7472eeea422d
 # ╟─5bdbce07-0f50-459f-8ea6-6bb670aea47d
 # ╟─61ebe90a-60e9-4e77-9a24-a793e4701209
 # ╟─dd199ecb-16cf-4e58-8918-64077b6c192c
+# ╟─df24d7ca-2143-481d-80fe-b8f31f0a3bb8
 # ╟─e537ca5d-86d6-423b-a3b9-d9ba503c4d31
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
+# ╟─66c7f34f-378d-4a37-a112-5032c4cf07a4
 # ╟─5401dc9a-a647-4722-b49d-21023b829cb3
 # ╟─0eaba7b9-5bfc-44b3-a99a-8b240a952e02
 # ╟─da645592-41d8-4212-8ca0-241923f2dc14
