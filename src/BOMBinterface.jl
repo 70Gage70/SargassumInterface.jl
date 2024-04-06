@@ -245,7 +245,7 @@ begin
 
 	The main integration plot is displayed on the upper left of the screen. When parameters are changed, the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
 
-	To take a closer look at the plot, click `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and an interface for exporting your simulation data.
+	After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and an interface for exporting your simulation data.
 
 	At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
 	"""
