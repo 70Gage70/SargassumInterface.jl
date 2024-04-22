@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.40
+# v0.19.41
 
 using Markdown
 using InteractiveUtils
@@ -25,6 +25,7 @@ end
 begin
 	using SargassumBOMB
 	using SargassumFromAFAI
+	using SargassumColors
 	using GLMakie
 	using Dates
 	using PlutoUI, HypertextLiteral
@@ -891,14 +892,15 @@ let
 		plot_type = plot_params[1]
 		lon_min, lon_max, lat_min, lat_max = plot_params[2:5] .|> x -> parse(Float64, x)
 		
+		set_theme!(GEO_THEME())
 		global fig = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax = geo_axis(fig[1, 1], limits = (lon_min, lon_max, lat_min, lat_max), title = "", labelscale = 1.0)
+		ax = Axis(fig[1, 1], limits = (lon_min, lon_max, lat_min, lat_max), title = "")
 		if plot_type == "Trajectories"
 			trajectory!(ax, sol)
 		elseif plot_type == "Heat Map"
 			trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
 		end
-		land!(ax)
+		SargassumColors.land!(ax)
 	catch
 		global fig = ad(md"""The plot has not been generated yet or the integration parameters have changed.""", "warning")
 	end
@@ -1043,6 +1045,8 @@ begin
 	Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
 
 	Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
+
+	Select `".png"` to output the figure itself.
 	"""
 	
 	local ui_integration_export(Child) = md"""
@@ -1051,7 +1055,7 @@ begin
 		$(Child(TextField((30, 2), default = @__DIR__))) \
 		Name
 		$(Child(TextField(10, default = "my_file_name"))) \
-		Export Type: $(Child(Select([".mat", ".nc"], default = ".mat")))
+		Export Type: $(Child(Select(["", ".mat", ".nc", ".png"], default = "")))
 		"""
 
 	try
@@ -1093,6 +1097,8 @@ begin
 			rtr2mat(sol, outfile)
 		elseif integration_export_parameters[3] == ".nc"
 			rtr2nc(sol, outfile, range(-100.0, -40.0, length = 134), range(-100.0, -40.0, length = 64))
+		elseif integration_export_parameters[3] == ".png"
+			save(outfile, fig)
 		end
 	catch
 		nothing
@@ -1136,14 +1142,15 @@ begin
 let
 if afai_plot_params[1]
 	try
+		set_theme!(GEO_THEME())
 		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax_afai = geo_axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "", labelscale = 1.0)
+		ax_afai = Axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "")
 		local date, week, clouds, scale = afai_plot_params[2:5]
 		local date = DateTime(date, "yyyy-mm") |> yearmonth
 		local week = parse(Int64, week)
-		SargassumFromAFAI.plot!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
+		SargassumFromAFAI.sarg!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
 		clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
-		land!(ax_afai)
+		SargassumColors.land!(ax_afai)
 	catch
 		global fig_afai = ad(md"""Date out of range! Currently certain months in 2017 and 2018 are supported.""", "warning")
 	end
