@@ -39,6 +39,9 @@ end
 md"""
 ---
 ---
+---
+---
+---
 """
 
 # ╔═╡ 81769b34-5373-43fe-88ef-82bb3a714ff6
@@ -175,6 +178,11 @@ md"""
 ### Springs
 """
 
+# ╔═╡ 2e4142db-6a64-4c57-a227-8d055f458863
+md"""
+### N clumps max
+"""
+
 # ╔═╡ cac6046f-0d45-4f1a-b062-b8cc53044807
 md"""
 ### Connections
@@ -242,7 +250,7 @@ let
 	blurb = md"""
 	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
 
-	All of the integration parameters are set in this column. Scroll down to see them all, and click the `HELP` boxes for further explanation. At the bottom, there is a section for warnings. If things aren't working, check there.
+	All of the integration parameters are set in this column. Scroll down to see them all, and click the [❓ HELP ❓] boxes for further explanation.
 
 	Tip! For sliders, click on them and use your arrow keys to make small adjustments.
 
@@ -261,6 +269,32 @@ let
 	ad(blurb2, "tip")
 end
 
+# ╔═╡ 6665620f-77f7-4ed5-9d62-4fdbfea21d93
+let
+	x = WATER_ITP.x
+	lon, lat = xy2sph(x.dims[:x], x.dims[:y]) .|> extrema
+	lon = lon .|> x -> round(x, sigdigits = 4)
+	lat = lat .|> x -> round(x, sigdigits = 4)
+
+	tmin, tmax = extrema(x.dims[:t]) .|> time2datetime .|> x -> "$(monthname(x)), $(day(x)), $(year(x))"
+	
+	blurb = md"""
+	|             |            |             |           |       |         |
+	|-------------|------------|-------------|-----------|-------|---------|
+	| Lon min (°) | $(lon[1])  | Lat min (°) | $(lat[1]) | T min | $(tmin) | 
+	| Lon max (°) | $(lon[2])  | Lat max (°) | $(lat[2]) | T max | $(tmax) |
+	"""
+	
+	ad(
+		md""" 
+		## Interpolants and Fields
+
+		You are currently using the default interpolants, which have the following limits.
+		
+		$(blurb)""", 
+	"tip")
+end
+
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 begin
 	local blurb = md"""
@@ -273,7 +307,7 @@ begin
 	ad(
 		md""" 
 		## Initial Conditions 
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
 end
 
@@ -323,37 +357,13 @@ let
 		### Integration time span
 		
 		| Start Date    | End Date     | 
-		|---------------|---------------|
+		|:---------------:|:---------------:|
 		| $(dst(Child))| $(den(Child)) |
 		"""
 		@bind tspan_data_rect PlutoUI.combine() do Child
 			ad(ui_tspan(Child), "info")
 		end
 	end
-end
-
-# ╔═╡ c75d9b70-d3bb-41fe-84bf-53c0ab41f406
-let
-	if ics_type == "AFAI"
-
-	afyr(Child) = Child(Select([2017, 2018], default = 2018))
-	afmn(Child) = Child(Select([1 => "Jan", 2 => "Feb", 3 => "Mar", 4 => "Apr", 5 => "May", 6 => "Jun", 7 => "Jul", 8 => "Aug", 9 => "Sep", 10 => "Oct", 11 => "Nov", 12 => "Dec"], default = 4))
-	afwk(Child) = Child(Select([1, 2, 3, 4], default = 1))
-	aflv(Child) = Child(PlutoUI.Slider(1:20; default=5, show_value = true))
-		
-	ui_afai(Child) = md"""
-	### AFAI-based initial distribution parameters
-	
-	| Year          | Month             | Week          | Levels            |
-	|---------------|-------------------|---------------|-------------------|
-	| $(afyr(Child)) | $(afmn(Child)) | $(afwk(Child)) | $(aflv(Child))
-	"""
-
-	@bind afai_params PlutoUI.combine() do Child
-		ad(ui_afai(Child), "info")
-	end
-		
-	end # if
 end
 
 # ╔═╡ ebc20b02-83d5-4b94-ae76-16a1bd619312
@@ -383,37 +393,47 @@ begin
 	ad(
 		md""" 
 		## Clump Parameters
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
 end
 
-# ╔═╡ 489fe878-3ac1-4e18-a185-7d4f1f6679d0
-begin
-	local ui_clump(Child) = md"""
-		``\delta`` [``\cdot``]: $(Child(TextField(default = "1.25"))) \
-		``a`` [``\text{km}``]: $(Child(TextField(default = "1.0e-4"))) \
-		``\sigma`` [``\cdot``]: $(Child(TextField(default = "0.0"))) \
-		``\alpha`` [``\cdot``]: $(Child(TextField(default = ""))) Force? (apply this ``\alpha`` regardless of ``\delta``) $(Child(CheckBox(default = false))) \
-		``\tau`` [``\text{d}``]: $(Child(TextField(default = ""))) Force? (apply this ``\tau`` regardless of ``\delta`` and  ``a``) $(Child(CheckBox(default = false))) \
-		"""
+# ╔═╡ d2dd84eb-e2cc-4c32-9966-7803549a993d
+let
+	delta(Child) = Child(PlutoUI.Slider(1.01:0.01:1.30; default = 1.2, show_value = true))
+	a(Child) = Child(PlutoUI.Slider(0.1:0.1:10.0; default = 1.0, show_value = true))
+	sigma(Child) = Child(PlutoUI.Slider(0.8:0.01:1.2; default = 1.0, show_value = true))
+	alpha(Child) = Child(PlutoUI.Slider(0.1:0.01:3; default = 1.0, show_value = true))
+	tau(Child) = Child(PlutoUI.Slider(0.01:0.01:0.4; default = 0.01, show_value = true))
+	forcealpha(Child) = Child(CheckBox(default = false))
+	forcetau(Child) = Child(CheckBox(default = false))
+	
+	
+
+	ui_clump_params(Child) = md"""
+	| Parameter   | Units      | Value       | Force     | 
+	|:-------------:|:------------:|:-------------:|:-----------:|
+	| ``\delta``  | ``\cdot``  | $(delta(Child))  | ``\cdot`` |
+	| ``a``       | ``\times 10^{-4} \, \text{km}``  | $(a(Child))  | ``\cdot`` |
+	| ``\sigma``  | ``\cdot``  | $(sigma(Child))  | ``\cdot`` |
+	| ``\alpha``  | ``\%``  | $(alpha(Child))  | $(forcealpha(Child)) |
+	| ``\tau``    | ``\text{d}``  | $(tau(Child))  | $(forcetau(Child)) |
+	"""
+	
 	@bind clump_parameters PlutoUI.combine() do Child
-		ad(ui_clump(Child), "info")
+		ad(ui_clump_params(Child), "info")
 	end
 end
 
 # ╔═╡ 8c14a852-3bd4-4dda-b812-6c1378d676d5
-begin
-	local δ, a, σ, α, force_α, τ, force_τ = clump_parameters
-	δ, a, σ = (δ, a, σ) .|> x -> parse(Float64, x)
-	clumps = ClumpParameters(δ = δ, a = a, σ = σ)
+let
+	δ, a, σ, α, force_α, τ, force_τ = clump_parameters
+	global clumps = ClumpParameters(δ = δ, a = a, σ = σ)
 
-	if force_α && α != ""
-		α = parse(Float64, α)
+	if force_α
 		clumps = ClumpParameters(α, clumps.τ, clumps.R, clumps.f, clumps.σ)
 	end
 
-	if force_τ && τ != ""
-		τ = parse(Float64, τ)
+	if force_τ
 		clumps = ClumpParameters(clumps.α, τ, clumps.R, clumps.f, clumps.σ)
 	end
 
@@ -429,22 +449,30 @@ begin
 	
 	- `"BOMB"`: Has a stiffness function ``k(x) = k (1 + \exp((x - 2L)/0.2))^{-1}`` where ``L`` is the natural length of the spring.
 	- `"Hooke"`: Has a stiffness function ``k(x) = k``.
+
+	Select ``\times 10`` to multiply the displayed value by ``10``.
 	"""
 	ad(
 		md""" 
 		## Spring Parameters
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP❓ ", blurb))""", 
 	"tip")
 end
 
-# ╔═╡ 7d5f16a6-9ce9-45c0-9483-24f44a23bd45
-begin
-	local ui_springs(Child) = md"""
-		Type: $(Child(Select(["BOMB", "Hooke"], default = "BOMB"))) \
-		``k`` [``\text{d}^{-2}``]: $(Child(TextField(default = "1.00")))
-		"""
+# ╔═╡ 72107d04-8ce2-4636-921b-d52d8431be46
+let
+	ktype(Child) = Child(Select(["BOMB", "Hooke"], default = "BOMB"))
+	kval(Child) = Child(PlutoUI.Slider(0.1:0.1:20.0; default = 10.0, show_value = true))
+	tten(Child) = Child(CheckBox(default = false))
+	
+	ui_clump_params(Child) = md"""
+	| Type             | ``k \, [\text{d}^{-2}]`` | ``\times 10`` |
+	|:----------------:|:------------------------:|:-------------:|
+	| $(ktype(Child))  | $(kval(Child))           | $(tten(Child))|
+	"""
+	
 	@bind spring_parameters PlutoUI.combine() do Child
-		ad(ui_springs(Child), "info")
+		ad(ui_clump_params(Child), "info")
 	end
 end
 
@@ -461,7 +489,7 @@ begin
 	ad(
 		md""" 
 		## Connections
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
 end
 
@@ -480,7 +508,7 @@ begin
 	if conn_type == "Nearest"
 		
 		local ui_conn_nearest(Child) = md"""
-			Number of neighbors: $(Child(TextField(default = "2")))
+			Number of neighbors: $(Child(PlutoUI.Slider(1:20, default = 2, show_value = true)))
 			"""
 		@bind conn_params PlutoUI.combine() do Child
 			ad(ui_conn_nearest(Child), "info")
@@ -489,7 +517,7 @@ begin
 	elseif conn_type == "Radius"
 
 		local ui_conn_radius(Child) = md"""
-			Radius multiple: $(Child(TextField(default = "2.0")))
+			Radius multiple: $(Child(PlutoUI.Slider(0.1:0.1:5.0, default = 2.0, show_value = true)))
 			"""
 		@bind conn_params PlutoUI.combine() do Child
 			ad(ui_conn_radius(Child), "info")
@@ -521,7 +549,7 @@ begin
 	ad(
 		md""" 
 		## Biology
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
 end
 
@@ -549,7 +577,7 @@ begin
 	ad(
 		md""" 
 		## Land
-		$(details("HELP", blurb))""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
 end
 
@@ -572,9 +600,6 @@ begin
 	end
 	land
 end
-
-# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
-ad(md""" # Warnings """, "warning")
 
 # ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
 begin
@@ -690,6 +715,42 @@ function ymwplusweek2ymw(ymw, n_week)
 	return (y + new_years, new_months, new_weeks)
 end
 
+# ╔═╡ 59ae76ce-1655-4173-a368-125805c75497
+let
+	afyrmn = keys(DIST_1718) |> collect |> sort
+	
+	NUM2MON = Dict(1 => "JAN", 2 => "FEB", 3 => "MAR", 4 => "APR", 5 => "MAY", 6 => "JUN", 7 => "JUL", 8 => "AUG", 9 => "SEP", 10 => "OCT", 11 => "NOV", 12 => "DEC")
+
+	afyrmn_parsed = ["$(valid[1]), $(NUM2MON[valid[2]])" for valid in afyrmn]
+
+	global VALID_AFAI_YEAR_MONTHS = afyrmn .=> afyrmn_parsed
+end
+
+# ╔═╡ c75d9b70-d3bb-41fe-84bf-53c0ab41f406
+let
+	if ics_type == "AFAI"
+		
+	afyrmn(Child) = Child(Select(VALID_AFAI_YEAR_MONTHS, default = (2018, 4)))
+	afwk(Child) = Child(Select([1, 2, 3, 4], default = 1))
+	aflv(Child) = Child(PlutoUI.Slider(1:20; default=5, show_value = true))
+		
+	ui_afai(Child) = md"""
+	### AFAI-based initial distribution parameters
+
+	AFAI distributions are only available at select times.
+	
+	| Year/Month      | Week              | Levels         |
+	|:-----------------:|:-------------------:|:----------------:|
+	| $(afyrmn(Child))| $(afwk(Child))    | $(aflv(Child)) |
+	"""
+
+	@bind afai_params PlutoUI.combine() do Child
+		ad(ui_afai(Child), "info")
+	end
+		
+	end # if
+end
+
 # ╔═╡ 2c38594d-7d78-49d8-9597-0b723f56e76f
 let
 	if ics_type == "Rectangle"
@@ -701,18 +762,20 @@ let
 		y_range = range(cor[3], cor[4], length = n_c_xy[2])
 		global ics = InitialConditions(tspan, x_range, y_range, to_xy = true)
 	elseif ics_type == "AFAI"
-		y1, m1, w1 = afai_params[1:3]
+		y1, m1 = afai_params[1]
+		w1 = afai_params[2]
+		levels = afai_params[3]
 		y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
 		tspan = (ymw2time(y1, m1, w1), ymw2time(y2, m2, w2))
-		year, month, week, levels = afai_params
-		dist = SargassumFromAFAI.DIST_1718[(year, month)]
-		global ics = InitialConditions(tspan, dist, [week], levels)
+		dist = SargassumFromAFAI.DIST_1718[(y1, m1)]
+		global ics = InitialConditions(tspan, dist, [w1], levels)
 	end
 end
 
 # ╔═╡ a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
 try
-	y1, m1, w1 = afai_params[1:3]
+	y1, m1 = afai_params[1]
+	w1 = afai_params[2]
 	y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
 	ad(md"""Integrating from week $(w1) of $(monthname(m1)), $(y1) --> week $(w2) of $(monthname(m2)), $(y2) with $(size(ics.ics,2)) clumps.""", "info")
 catch
@@ -752,191 +815,31 @@ begin
 	end # if
 end
 
-# ╔═╡ da645592-41d8-4212-8ca0-241923f2dc14
-begin
-	warnings_q = false
-	
-	# check if requested times are within range
-	local t1 = parse(DateTime, tspan_data[1])
-	local t2 = parse(DateTime, tspan_data[2])
-
-	local ts = [
-		WATER_ITP.x.dims[:t], WIND_ITP.x.dims[:t], 
-		STOKES_ITP.x.dims[:t], WAVES_ITP.x.dims[:t], 
-		NUTRIENTS_ITP.x.dims[:t], TEMPERATURE_ITP.x.dims[:t]]
-	local names = ["WATER", "WIND", "STOKES", "WAVES", "NUTRIENTS", "TEMPERATURE", "LAND"]
-	
-	for i = 1:length(ts)
-		local tspan = ts[i] |> x -> (x[1], x[end]) .|> time2datetime
-		if !(tspan[1] <= t1 <= tspan[2]) || !(tspan[1] <= t2 <= tspan[2])
-			@warn "Requested timespan is outside the range of $(names[i])."
-			global warnings_q = true
-		end
-	end
-
-	# check rectangular parameters
-	if ics_type == "Rectangle"
-		local lonslats = [
-			xy2sph(WATER_ITP.x.dims[:x], WATER_ITP.x.dims[:y]),
-			xy2sph(WIND_ITP.x.dims[:x], WIND_ITP.x.dims[:y]),
-			xy2sph(STOKES_ITP.x.dims[:x], STOKES_ITP.x.dims[:y]),
-			xy2sph(WAVES_ITP.x.dims[:x], WAVES_ITP.x.dims[:y]),
-			xy2sph(NUTRIENTS_ITP.x.dims[:x], NUTRIENTS_ITP.x.dims[:y]),
-			xy2sph(TEMPERATURE_ITP.x.dims[:x], TEMPERATURE_ITP.x.dims[:y]),
-			xy2sph(LAND_ITP.x.dims[:x], LAND_ITP.x.dims[:y])]
-		local names = ["WATER", "WIND", "STOKES", "WAVES", "NUTRIENTS", "TEMPERATURE"]
-		local cor = rect_params[1:4] .|> x -> parse(Float64, x)
-		
-		for i = 1:length(lonslats)
-			local lonlat = (lonslats[i][1][1], lonslats[i][2][end])
-			if !all(lonlat[1] .<= cor .<= lonlat[2])
-				@warn "Requested position is outside the range of $(names[i])."
-				global warnings_q = true
-			end
-		end
-	
-		try 
-			local n_c_xy = rect_params[5:6] .|> x -> parse(Int64, x)
-			if (n_c_xy[1] <= 0) || (n_c_xy[2] <= 0)
-				@warn "`N clumps x` and `y` should both be positive"
-				global warnings_q = true
-			end
-		catch
-			@warn "`N clumps x` or `y` could not be parsed as an integer."
-			global warnings_q = true
-		end
-	end
-
-	# check afai parameters
-	if ics_type == "AFAI"
-		local date, levels = afai_params
-		local date = DateTime(date, "yyyy-mm") |> yearmonth
-		if !(date in keys(SargassumFromAFAI.DIST_1718))
-			@warn "The AFAI distribution at this date is not one of the pre-computed distributions (2017 - 2018, months where available)."
-			global warnings_q = true
-		end
-
-		try 
-			levels = levels |> x -> parse(Int64, x)
-			if levels <= 0
-				@warn "`Levels` should be positive"
-				global warnings_q = true
-			end
-		catch
-			@warn "`Levels` could not be parsed as an integer."
-			global warnings_q = true
-		end
-	end
-
-	# check clump parameters
-	local δ, a, σ, α, force_α, τ, force_τ = clump_parameters
-	local δ, a, σ = (δ, a, σ) .|> x -> parse(Float64, x)
-	if !(1.0 <= δ <= 5.0)
-		@warn "δ should definitely be at least 1.0 and generally should not be larger than 5"
-		global warnings_q = true
-	end
-	if !(0.0 <= a <= 1.0e-2)
-		@warn "δ should definitely be at least 0.0 and generally should not be larger than 0.01"
-		global warnings_q = true
-	end
-	if !(0.0 <= σ <= 2.0)
-		@warn "σ should definitely be at least 0.0 and generally should not be larger than 2.0"
-		global warnings_q = true
-	end
-	if force_α && !(0.0 <= α <= 0.05)
-		@warn "α should definitely be at least 0.0 and generally should not be larger than 0.05"
-		global warnings_q = true
-	end
-	if force_τ && !(0.0 <= τ <= 0.5)
-		@warn "α should definitely be at least 0.0 and generally should not be larger than 0.5"
-		global warnings_q = true
-	end
-
-	# check spring parameters
-	local spring_type, amplitude = spring_parameters
-	local amplitude = parse(Float64, amplitude)
-	if !(0.0 <= amplitude)
-		@warn "Spring amplitude should definitely be at least 0.0."
-		global warnings_q = true
-	end
-
-	# check connections parameters
-	if conn_type == "Nearest"
-		try
-			local param = parse(Int64, conn_params[1])
-			if !(0.0 <= param)
-				@warn "Spring parameter should definitely be at least 0.0."
-				global warnings_q = true
-			end
-		catch e
-			@warn "Could not parse the spring parameter (number of nearest neighbors) as an integer."
-			global warnings_q = true
-		end
-
-	elseif conn_type == "Radius"
-		local param = parse(Float64, conn_params[1])
-		if !(0.0 <= param)
-			@warn "Spring parameter should definitely be at least 0.0."
-			global warnings_q = true
-		end
-	end
-
-	# check growth/death parameters
-	if gd_type == "Brooks"
-		local μ_max, m, K_N, c_min, c_max = gd_params
-		local μ_max, m, K_N = (μ_max, m, K_N) .|> x -> parse(Float64, x)
-		
-
-		if !all(0 .<= [μ_max, m, K_N])
-			@warn "Brooks parameters should definitely be at least 0.0."
-			global warnings_q = true
-		end
-
-		try 
-			c_min, c_max = (c_min, c_max) .|> x -> parse(Int64, x)
-			if (c_min > c_max) || c_min < 0 || c_max < 0
-				@warn "Clumps limits should be positive and the minimum should be less than the maximum."
-			end
-
-		catch
-			@warn "Could not parse the clump limits as integers."
-		end
-    end
-	
-	nothing
-end
-
-# ╔═╡ 0eaba7b9-5bfc-44b3-a99a-8b240a952e02
-begin
-	if warnings_q == 0
-		 ad(md"""No warnings!""", "tip")
-	end
-end
-
 # ╔═╡ 4430e3f8-ee7d-46ab-a98a-573db7815670
-begin
-	local spring_type, amplitude = spring_parameters
-	local amplitude = parse(Float64, amplitude)
+let
+	spring_type, amplitude, tten = spring_parameters
+	amplitude = tten ? amplitude * 10 : amplitude
 
 	if spring_type == "BOMB"
-		springs = BOMBSpring(amplitude, ΔL(ics))
+		global springs = BOMBSpring(amplitude, ΔL(ics))
 	elseif spring_type == "Constant"
-		springs = HookeSpring(amplitude, ΔL(ics))
+		global springs = HookeSpring(amplitude, ΔL(ics))
 	end
 end
+
+# ╔═╡ c979a8ff-c400-419e-9199-886d17bdda6a
+n_clumps_max = size(ics.ics, 2)
 
 # ╔═╡ 7f4daf85-2b36-4450-bf48-a4d77b4d4af3
 begin
 	if conn_type == "None"
-		connections = ConnectionsNone()
+		connections = ConnectionsNone(n_clumps_max)
 	elseif conn_type == "Full"
-		connections = ConnectionsFull()
+		connections = ConnectionsFull(n_clumps_max)
 	elseif conn_type == "Nearest"
-		local param = parse(Int64, conn_params[1])
-		connections = ConnectionsNearest(param)
+		connections = ConnectionsNearest(n_clumps_max, conn_params[1])
 	elseif conn_type == "Radius"
-		local param = parse(Float64, conn_params[1])*ΔL(ics)
-		connections = ConnectionsRadius(param)
+		connections = ConnectionsRadius(n_clumps_max, conn_params[1]*ΔL(ics))
 	end
 end
 
@@ -1221,6 +1124,7 @@ end
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
+# ╟─6665620f-77f7-4ed5-9d62-4fdbfea21d93
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
 # ╟─ed4f082b-237c-4b08-b3b9-2f1846b0ecfb
@@ -1230,10 +1134,10 @@ end
 # ╟─a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
 # ╟─81769b34-5373-43fe-88ef-82bb3a714ff6
 # ╟─75898dc7-beec-4c4d-8580-79ec1df8cc42
-# ╠═489fe878-3ac1-4e18-a185-7d4f1f6679d0
+# ╟─d2dd84eb-e2cc-4c32-9966-7803549a993d
 # ╟─3770ede8-77e4-47e3-bb70-6fd4d486d0b7
 # ╟─6bda3ba9-fbba-4ce5-8a23-0c606845b31a
-# ╟─7d5f16a6-9ce9-45c0-9483-24f44a23bd45
+# ╟─72107d04-8ce2-4636-921b-d52d8431be46
 # ╟─e0d8925d-cc12-4a72-a383-93f07cb3d495
 # ╟─c60bb5f5-82b7-484c-b56b-ded74a1e651f
 # ╟─e1fd0825-6b16-4fb6-9358-4252b1bd77e9
@@ -1246,9 +1150,6 @@ end
 # ╟─e537ca5d-86d6-423b-a3b9-d9ba503c4d31
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
 # ╟─66c7f34f-378d-4a37-a112-5032c4cf07a4
-# ╟─5401dc9a-a647-4722-b49d-21023b829cb3
-# ╟─0eaba7b9-5bfc-44b3-a99a-8b240a952e02
-# ╟─da645592-41d8-4212-8ca0-241923f2dc14
 # ╟─4fddac82-52f3-464f-874f-056e8f165ba0
 # ╟─d512eee1-890c-40ce-ab0e-54d1004ad5d2
 # ╟─f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
@@ -1266,6 +1167,8 @@ end
 # ╟─8c14a852-3bd4-4dda-b812-6c1378d676d5
 # ╟─943f8d1a-335a-4321-8d2b-b29e5ca5845c
 # ╟─4430e3f8-ee7d-46ab-a98a-573db7815670
+# ╟─2e4142db-6a64-4c57-a227-8d055f458863
+# ╟─c979a8ff-c400-419e-9199-886d17bdda6a
 # ╟─cac6046f-0d45-4f1a-b062-b8cc53044807
 # ╟─7f4daf85-2b36-4450-bf48-a4d77b4d4af3
 # ╟─8e250f3e-e5b9-4c76-9eac-39a4a60ded57
@@ -1293,3 +1196,4 @@ end
 # ╟─e90936ec-f215-4a03-bd75-da2df6308ed0
 # ╟─67c5ed03-7e1b-4c4d-8fa1-837848a37924
 # ╟─ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
+# ╟─59ae76ce-1655-4173-a368-125805c75497
