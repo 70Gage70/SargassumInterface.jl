@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.41
+# v0.19.42
 
 using Markdown
 using InteractiveUtils
@@ -238,11 +238,13 @@ md"""
 ad(text, kind) = Markdown.MD(Markdown.Admonition(kind, "", [text]))
 
 # ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
-begin
-	local blurb = md"""
+let
+	blurb = md"""
 	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
 
 	All of the integration parameters are set in this column. Scroll down to see them all, and click the `HELP` boxes for further explanation. At the bottom, there is a section for warnings. If things aren't working, check there.
+
+	Tip! For sliders, click on them and use your arrow keys to make small adjustments.
 
 	The main integration plot is displayed on the upper left of the screen. When parameters are changed, the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
 
@@ -251,9 +253,9 @@ begin
 	At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
 	"""
 
-	local blurb2 = md"""
+	blurb2 = md"""
 	# SargassumBOMB Interface
-	$(details("Click me for tutorial!", blurb))
+	$(details("💡 Click me for tutorial! 💡", blurb))
 	"""
 	
 	ad(blurb2, "tip")
@@ -262,13 +264,11 @@ end
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 begin
 	local blurb = md"""
-	These settings control the initial locations of clumps.
-
-	The time span sets the initial and final times through which the integration is performed. Then, one of two types of initial position distributions can be chosen.
+	These settings control the initial locations of clumps. One of two types of initial position distributions can be chosen.
 	
 	- `"Rectangle"`: Clumps are initialized in a rectangle inside the defined latitude/longitude box with `N clumps x` in the x direction and `N clumps y` in the y direction.
 	
-	- `"AFAI"`: Clumps are initialized according to the Sargassum distribution at the indicated date and week. `Levels` is related to the total number of clumps; the higher it is, the closer the initialized distribution is to the actual distribution.
+	- `"AFAI"`: Clumps are initialized according to the Sargassum distribution at the indicated date and week. `Levels` is related to the total number of clumps; the higher it is, the closer the initialized distribution is to the actual distribution. The integration starts at the indicated date and week and proceeds for the number of selected weeks.
 	"""
 	ad(
 		md""" 
@@ -277,22 +277,9 @@ begin
 	"tip")
 end
 
-# ╔═╡ ebc20b02-83d5-4b94-ae76-16a1bd619312
-begin
-	local ui_tspan(Child) = md"""
-		### Integration time span
-		Start date (yyyy-mm-dd): $(Child(TextField(default = "2018-04-07"))) \
-		End date (yyyy-mm-dd): $(Child(TextField(default = "2018-04-14")))
-		"""
-	@bind tspan_data PlutoUI.combine() do Child
-		ad(ui_tspan(Child), "info")
-	end
-end
-
 # ╔═╡ 62907762-cad8-483f-9dd1-5907c43b49ab
-begin
-		
-	local blurb = md"""
+let	
+	blurb = md"""
 		### Initial conditions type: $(@bind ics_type Select(["Rectangle", "AFAI"], default = "AFAI"))
 		"""
 	ad(blurb, "info")
@@ -300,18 +287,25 @@ begin
 end
 
 # ╔═╡ ed4f082b-237c-4b08-b3b9-2f1846b0ecfb
-begin
+let
 	if ics_type == "Rectangle"
+
+	lonmin(Child) = Child(PlutoUI.Slider(-100:-40; default=-55, show_value = true))
+	lonmax(Child) = Child(PlutoUI.Slider(-100:-40; default=-50, show_value = true))
+	latmin(Child) = Child(PlutoUI.Slider(0:40; default=5, show_value = true))
+	latmax(Child) = Child(PlutoUI.Slider(0:40; default=10, show_value = true))
+	ncx(Child) = Child(PlutoUI.Slider(1:50; default=5, show_value = true))
+	ncy(Child) = Child(PlutoUI.Slider(1:50; default=5, show_value = true))
 		
-	local ui_rect(Child) = md"""
-		### Rectangular distribution parameters
-		Lon min ( ° ): $(Child(TextField(default = "-55.0")))
-		Lon max ( ° ): $(Child(TextField(default = "-50.0"))) \
-		Lat min ( ° ): $(Child(TextField(default = "5.0")))
-		Lat max ( ° ): $(Child(TextField(default = "10.0"))) \
-		N clumps x: $(Child(TextField(default = "5")))
-		N clumps y: $(Child(TextField(default = "5")))
-		"""
+	ui_rect(Child) = md"""
+	### Rectangular distribution parameters
+	
+	|               |                   |               |                   |
+	|---------------|-------------------|---------------|-------------------|
+	| Lon min (°) | $(lonmin(Child))  | Lat min (°)  | $(latmin(Child))  |
+	| Lon max (°) | $(lonmax(Child))  | Lat max (°) | $(latmax(Child)) |
+	| N clumps x    | $(ncx(Child)) | N clumps y    | $(ncy(Child)) |
+	"""
 	@bind rect_params PlutoUI.combine() do Child
 		ad(ui_rect(Child), "info")
 	end
@@ -319,16 +313,42 @@ begin
 	end # if
 end
 
+# ╔═╡ 76d60013-1856-4970-b2bd-cebea929fbd6
+let
+	if ics_type == "Rectangle"
+		dst(Child) = Child(DatePicker(default = Date(2018, 4, 07)))
+		den(Child) = Child(DatePicker(default = Date(2018, 4, 14)))
+		
+		ui_tspan(Child) = md"""
+		### Integration time span
+		
+		| Start Date    | End Date     | 
+		|---------------|---------------|
+		| $(dst(Child))| $(den(Child)) |
+		"""
+		@bind tspan_data_rect PlutoUI.combine() do Child
+			ad(ui_tspan(Child), "info")
+		end
+	end
+end
+
 # ╔═╡ c75d9b70-d3bb-41fe-84bf-53c0ab41f406
-begin
+let
 	if ics_type == "AFAI"
 
-	local ui_afai(Child) = md"""
-		### AFAI-based initial distribution parameters
-		Date (yyyy-mm): $(Child(TextField(default = "2018-04"))) \
-		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
-		Levels: $(Child(TextField(default = "10")))
-		"""
+	afyr(Child) = Child(Select([2017, 2018], default = 2018))
+	afmn(Child) = Child(Select([1 => "Jan", 2 => "Feb", 3 => "Mar", 4 => "Apr", 5 => "May", 6 => "Jun", 7 => "Jul", 8 => "Aug", 9 => "Sep", 10 => "Oct", 11 => "Nov", 12 => "Dec"], default = 4))
+	afwk(Child) = Child(Select([1, 2, 3, 4], default = 1))
+	aflv(Child) = Child(PlutoUI.Slider(1:20; default=5, show_value = true))
+		
+	ui_afai(Child) = md"""
+	### AFAI-based initial distribution parameters
+	
+	| Year          | Month             | Week          | Levels            |
+	|---------------|-------------------|---------------|-------------------|
+	| $(afyr(Child)) | $(afmn(Child)) | $(afwk(Child)) | $(aflv(Child))
+	"""
+
 	@bind afai_params PlutoUI.combine() do Child
 		ad(ui_afai(Child), "info")
 	end
@@ -336,33 +356,17 @@ begin
 	end # if
 end
 
-# ╔═╡ 2c38594d-7d78-49d8-9597-0b723f56e76f
-begin
-	if ics_type == "Rectangle"
-		local t1, t2 = tspan_data .|> x -> DateTime(x, "yyyy-mm-dd") .|> datetime2time
-		local tspan = (t1, t2)
-		local cor = rect_params[1:4] .|> x -> parse(Float64, x)
-		local n_c_xy = rect_params[5:6] .|> x -> parse(Int64, x)
-		local x_range = range(cor[1], cor[2], length = n_c_xy[1])
-		local y_range = range(cor[3], cor[4], length = n_c_xy[2])
-		ics = InitialConditions(tspan, x_range, y_range, to_xy = true)
-	elseif ics_type == "AFAI"
-		local t1, t2 = tspan_data .|> x -> DateTime(x, "yyyy-mm-dd") .|> datetime2time
-		local tspan = (t1, t2)
-		local date, week, levels = afai_params
-		local date = DateTime(date, "yyyy-mm") |> yearmonth
-		local week = parse(Int64, week)
-		local levels = parse(Int64, levels)
-		local dist = SargassumFromAFAI.DIST_1718[date]
-		ics = InitialConditions(tspan, dist, [week], levels, "levels")
+# ╔═╡ ebc20b02-83d5-4b94-ae76-16a1bd619312
+let
+	if ics_type == "AFAI"
+		ui_tspan(Child) = md"""
+			### Integration time span
+			Weeks: $(Child(PlutoUI.Slider(1:20; default=1, show_value = true)))
+			"""
+		@bind tspan_data_afai PlutoUI.combine() do Child
+			ad(ui_tspan(Child), "info")
+		end
 	end
-end
-
-# ╔═╡ a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
-try
-	ad(md"""**Total clumps: $(n_clumps(ics.ics))**""", "info")
-catch
-	ad(md"""**Total clumps: ERROR**""", "info")
 end
 
 # ╔═╡ 75898dc7-beec-4c4d-8580-79ec1df8cc42
@@ -444,18 +448,6 @@ begin
 	end
 end
 
-# ╔═╡ 4430e3f8-ee7d-46ab-a98a-573db7815670
-begin
-	local spring_type, amplitude = spring_parameters
-	local amplitude = parse(Float64, amplitude)
-
-	if spring_type == "BOMB"
-		springs = BOMBSpring(amplitude, ΔL(ics))
-	elseif spring_type == "Constant"
-		springs = HookeSpring(amplitude, ΔL(ics))
-	end
-end
-
 # ╔═╡ c60bb5f5-82b7-484c-b56b-ded74a1e651f
 begin
 	local blurb = md"""
@@ -509,21 +501,6 @@ begin
 	end # if
 end
 
-# ╔═╡ 7f4daf85-2b36-4450-bf48-a4d77b4d4af3
-begin
-	if conn_type == "None"
-		connections = ConnectionsNone()
-	elseif conn_type == "Full"
-		connections = ConnectionsFull()
-	elseif conn_type == "Nearest"
-		local param = parse(Int64, conn_params[1])
-		connections = ConnectionsNearest(param)
-	elseif conn_type == "Radius"
-		local param = parse(Float64, conn_params[1])*ΔL(ics)
-		connections = ConnectionsRadius(param)
-	end
-end
-
 # ╔═╡ 5bdbce07-0f50-459f-8ea6-6bb670aea47d
 begin
 	local blurb = md"""
@@ -556,6 +533,196 @@ begin
 		"""
 	ad(blurb, "info")
 
+end
+
+# ╔═╡ e537ca5d-86d6-423b-a3b9-d9ba503c4d31
+begin
+	local blurb = md"""
+	These settings control how clumps interact with land/shorelines.
+
+	There are two models, `"Land"` and `"NoLand"`. 
+	
+	In the `"Land"` model, clumps die when reaching land or hitting a shoreline. 
+
+	In the `"NoLand"` model, clumps do not die when reaching land or hitting a shoreline. 
+	"""
+	ad(
+		md""" 
+		## Land
+		$(details("HELP", blurb))""", 
+	"tip")
+end
+
+# ╔═╡ 8a5827c1-8655-4808-8fe0-ff46fc25f982
+begin
+		
+	local blurb = md"""
+		### Land Model: $(@bind land_type Select(["Land", "NoLand"], default = "Land"))
+		"""
+	ad(blurb, "info")
+
+end
+
+# ╔═╡ 4568d0b9-e6a2-4653-abc5-44e229cc3ded
+begin
+	if land_type == "Land"
+		land = Land()
+	elseif land_type == "NoLand"
+		land = NoLand()
+	end
+	land
+end
+
+# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
+ad(md""" # Warnings """, "warning")
+
+# ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
+begin
+	@info "Defining notebook info box."
+
+	local blurb = md"""
+	This is a [Pluto notebook](https://plutojl.org/) powered by the [Julia programming language](https://julialang.org/).
+
+	- [GitHub](https://github.com/70Gage70/SargassumInterface.jl)
+	- [How to cite](https://github.com/70Gage70/SargassumInterface.jl)
+	"""
+
+	local blah = ad(
+		details("ABOUT/CITE", [blurb], open = false), 
+	"warning")
+	
+	@htl """<div style="
+	position: fixed; 
+	right: 1rem; 
+	top: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 99;
+	max-width: 18%;
+	background-color: var(--main-bg-color);">
+	$(blah)
+	</div>"""
+end
+
+# ╔═╡ 78a2638f-f10e-443f-835e-0c8454981617
+begin
+	@info "Defining inspect plot trigger."
+	
+	global plot_box = ad(
+	md"""
+	Inspect/export: $(@bind inspect_plot CheckBox(default=false))
+	""", 
+	"danger")
+
+	nothing
+end
+
+# ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
+begin
+	@info "Defining AFAI parameter window."
+	
+	local ui_afai_plot(Child) = md"""
+		Show satellite data: $(Child(CheckBox(default = false))) \
+		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
+		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
+		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
+		Scale: $(Child(Select(["Log", "Linear"], default = "Log"))) \
+		"""
+	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
+		ad(ui_afai_plot(Child), "info")
+	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 3rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 98;
+	max-width: 24%;
+	max-height: 20%;
+	background-color: var(--main-bg-color);">
+	$(afai_params)
+	</div>"""
+end
+
+# ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
+begin
+
+@info "Defining AFAI plot window."
+	
+let
+if afai_plot_params[1]
+	try
+		set_theme!(GEO_THEME())
+		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
+		ax_afai = Axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "")
+		local date, week, clouds, scale = afai_plot_params[2:5]
+		local date = DateTime(date, "yyyy-mm") |> yearmonth
+		local week = parse(Int64, week)
+		SargassumFromAFAI.sarg!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
+		clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
+		SargassumColors.land!(ax_afai)
+	catch
+		global fig_afai = ad(md"""Date out of range! Currently certain months in 2017 and 2018 are supported.""", "warning")
+	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 10rem; 
+	padding: 1px;
+	text-align: center;
+	z-index: 99;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(fig_afai)
+	</div>"""
+end
+end
+end
+
+# ╔═╡ ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
+function ymwplusweek2ymw(ymw, n_week)
+	y, m, w = ymw
+	new_months, new_weeks = (0, 1) .+ divrem(w + n_week - 1, 4)
+	new_years, new_months = (0, 1) .+ divrem(m + new_months - 1, 12)
+	return (y + new_years, new_months, new_weeks)
+end
+
+# ╔═╡ 2c38594d-7d78-49d8-9597-0b723f56e76f
+let
+	if ics_type == "Rectangle"
+		t1, t2 = tspan_data_rect .|> DateTime .|> datetime2time
+		tspan = (t1, t2)
+		cor = rect_params[1:4] 
+		n_c_xy = rect_params[5:6]
+		x_range = range(cor[1], cor[2], length = n_c_xy[1])
+		y_range = range(cor[3], cor[4], length = n_c_xy[2])
+		global ics = InitialConditions(tspan, x_range, y_range, to_xy = true)
+	elseif ics_type == "AFAI"
+		y1, m1, w1 = afai_params[1:3]
+		y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
+		tspan = (ymw2time(y1, m1, w1), ymw2time(y2, m2, w2))
+		year, month, week, levels = afai_params
+		dist = SargassumFromAFAI.DIST_1718[(year, month)]
+		global ics = InitialConditions(tspan, dist, [week], levels)
+	end
+end
+
+# ╔═╡ a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
+try
+	y1, m1, w1 = afai_params[1:3]
+	y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
+	ad(md"""Integrating from week $(w1) of $(monthname(m1)), $(y1) --> week $(w2) of $(monthname(m2)), $(y2) with $(size(ics.ics,2)) clumps.""", "info")
+catch
+	try
+		d1 = DateTime(tspan_data_rect[1])
+		d2 = DateTime(tspan_data_rect[2])
+		ad(md"""Integrating from $(monthname(d1)), $(day(d1)), $(year(d1)) --> $(monthname(d2)), $(day(d2)), $(year(d2)) with $(size(ics.ics,2)) clumps.""", "info")
+	catch
+		ad(md"""**Total clumps: ERROR**""", "info")
+	end
 end
 
 # ╔═╡ dd199ecb-16cf-4e58-8918-64077b6c192c
@@ -739,6 +906,40 @@ begin
 	nothing
 end
 
+# ╔═╡ 0eaba7b9-5bfc-44b3-a99a-8b240a952e02
+begin
+	if warnings_q == 0
+		 ad(md"""No warnings!""", "tip")
+	end
+end
+
+# ╔═╡ 4430e3f8-ee7d-46ab-a98a-573db7815670
+begin
+	local spring_type, amplitude = spring_parameters
+	local amplitude = parse(Float64, amplitude)
+
+	if spring_type == "BOMB"
+		springs = BOMBSpring(amplitude, ΔL(ics))
+	elseif spring_type == "Constant"
+		springs = HookeSpring(amplitude, ΔL(ics))
+	end
+end
+
+# ╔═╡ 7f4daf85-2b36-4450-bf48-a4d77b4d4af3
+begin
+	if conn_type == "None"
+		connections = ConnectionsNone()
+	elseif conn_type == "Full"
+		connections = ConnectionsFull()
+	elseif conn_type == "Nearest"
+		local param = parse(Int64, conn_params[1])
+		connections = ConnectionsNearest(param)
+	elseif conn_type == "Radius"
+		local param = parse(Float64, conn_params[1])*ΔL(ics)
+		connections = ConnectionsRadius(param)
+	end
+end
+
 # ╔═╡ dc6651a1-4c47-4cd7-a831-f37812e8a8e6
 begin
 	if gd_type == "Immortal"
@@ -755,82 +956,6 @@ begin
         gd_model = BrooksModel(ics, params = bmp)
     end
 	gd_model
-end
-
-# ╔═╡ e537ca5d-86d6-423b-a3b9-d9ba503c4d31
-begin
-	local blurb = md"""
-	These settings control how clumps interact with land/shorelines.
-
-	There are two models, `"Land"` and `"NoLand"`. 
-	
-	In the `"Land"` model, clumps die when reaching land or hitting a shoreline. 
-
-	In the `"NoLand"` model, clumps do not die when reaching land or hitting a shoreline. 
-	"""
-	ad(
-		md""" 
-		## Land
-		$(details("HELP", blurb))""", 
-	"tip")
-end
-
-# ╔═╡ 8a5827c1-8655-4808-8fe0-ff46fc25f982
-begin
-		
-	local blurb = md"""
-		### Land Model: $(@bind land_type Select(["Land", "NoLand"], default = "Land"))
-		"""
-	ad(blurb, "info")
-
-end
-
-# ╔═╡ 4568d0b9-e6a2-4653-abc5-44e229cc3ded
-begin
-	if land_type == "Land"
-		land = Land()
-	elseif land_type == "NoLand"
-		land = NoLand()
-	end
-	land
-end
-
-# ╔═╡ 5401dc9a-a647-4722-b49d-21023b829cb3
-ad(md""" # Warnings """, "warning")
-
-# ╔═╡ 0eaba7b9-5bfc-44b3-a99a-8b240a952e02
-begin
-	if warnings_q == 0
-		 ad(md"""No warnings!""", "tip")
-	end
-end
-
-# ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
-begin
-	@info "Defining notebook info box."
-
-	local blurb = md"""
-	This is a [Pluto notebook](https://plutojl.org/) powered by the [Julia programming language](https://julialang.org/).
-
-	- [GitHub](https://github.com/70Gage70/SargassumInterface.jl)
-	- [How to cite](https://github.com/70Gage70/SargassumInterface.jl)
-	"""
-
-	local blah = ad(
-		details("ABOUT/CITE", [blurb], open = false), 
-	"warning")
-	
-	@htl """<div style="
-	position: fixed; 
-	right: 1rem; 
-	top: 1rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 99;
-	max-width: 18%;
-	background-color: var(--main-bg-color);">
-	$(blah)
-	</div>"""
 end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
@@ -917,19 +1042,6 @@ let
 	$(fig)
 	</div>"""
 end
-end
-
-# ╔═╡ 78a2638f-f10e-443f-835e-0c8454981617
-begin
-	@info "Defining inspect plot trigger."
-	
-	global plot_box = ad(
-	md"""
-	Inspect/export: $(@bind inspect_plot CheckBox(default=false))
-	""", 
-	"danger")
-
-	nothing
 end
 
 # ╔═╡ 76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
@@ -1105,84 +1217,20 @@ begin
 	end
 end
 
-# ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
-begin
-	@info "Defining AFAI parameter window."
-	
-	local ui_afai_plot(Child) = md"""
-		Show satellite data: $(Child(CheckBox(default = false))) \
-		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
-		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
-		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
-		Scale: $(Child(Select(["Log", "Linear"], default = "Log"))) \
-		"""
-	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
-		ad(ui_afai_plot(Child), "info")
-	end
-
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	bottom: 3rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 98;
-	max-width: 24%;
-	max-height: 20%;
-	background-color: var(--main-bg-color);">
-	$(afai_params)
-	</div>"""
-end
-
-# ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
-begin
-
-@info "Defining AFAI plot window."
-	
-let
-if afai_plot_params[1]
-	try
-		set_theme!(GEO_THEME())
-		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax_afai = Axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "")
-		local date, week, clouds, scale = afai_plot_params[2:5]
-		local date = DateTime(date, "yyyy-mm") |> yearmonth
-		local week = parse(Int64, week)
-		SargassumFromAFAI.sarg!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
-		clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
-		SargassumColors.land!(ax_afai)
-	catch
-		global fig_afai = ad(md"""Date out of range! Currently certain months in 2017 and 2018 are supported.""", "warning")
-	end
-
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	bottom: 10rem; 
-	padding: 1px;
-	text-align: center;
-	z-index: 99;
-	max-width: 27%;
-	background-color: var(--main-bg-color);">
-	$(fig_afai)
-	</div>"""
-end
-end
-end
-
 # ╔═╡ Cell order:
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
-# ╟─ebc20b02-83d5-4b94-ae76-16a1bd619312
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
 # ╟─ed4f082b-237c-4b08-b3b9-2f1846b0ecfb
+# ╟─76d60013-1856-4970-b2bd-cebea929fbd6
 # ╟─c75d9b70-d3bb-41fe-84bf-53c0ab41f406
+# ╟─ebc20b02-83d5-4b94-ae76-16a1bd619312
 # ╟─a644a9ff-9cf2-4121-a764-ea2e3cbb76d9
 # ╟─81769b34-5373-43fe-88ef-82bb3a714ff6
 # ╟─75898dc7-beec-4c4d-8580-79ec1df8cc42
-# ╟─489fe878-3ac1-4e18-a185-7d4f1f6679d0
+# ╠═489fe878-3ac1-4e18-a185-7d4f1f6679d0
 # ╟─3770ede8-77e4-47e3-bb70-6fd4d486d0b7
 # ╟─6bda3ba9-fbba-4ce5-8a23-0c606845b31a
 # ╟─7d5f16a6-9ce9-45c0-9483-24f44a23bd45
@@ -1244,3 +1292,4 @@ end
 # ╟─5fa34147-a71a-43bb-8f5f-689d830508b3
 # ╟─e90936ec-f215-4a03-bd75-da2df6308ed0
 # ╟─67c5ed03-7e1b-4c4d-8fa1-837848a37924
+# ╟─ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
