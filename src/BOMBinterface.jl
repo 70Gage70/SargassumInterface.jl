@@ -213,16 +213,11 @@ begin
 	@info "Defining inspected plot options."
 	
 	local ui_inspect_plot(Child) = md"""
-		Plot type: $(Child(Select(["Trajectories", "Heat Map"], default = "Trajectories"))) \
-		Lon min: $(Child(TextField(4, default = "-100"))) Lon max: $(Child(TextField(4, default = "-40"))) \
-		Lat min: $(Child(TextField(4, default = "0"))) Lat max: $(Child(TextField(4, default = "40")))
-		\
-		\
+		Plot type: $(Child(Select(["Trajectories", "Heat Map"], default = "Trajectories")))
 		"""
-	global plot_window = @bind plot_params confirm(PlutoUI.combine() do Child
+	global plot_window = @bind plot_params PlutoUI.combine() do Child
 		ui_inspect_plot(Child)
-	end,
-	label = "APPLY")
+	end
 
 	nothing
 end
@@ -250,15 +245,19 @@ let
 	blurb = md"""
 	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
 
+	The interface will look best in fullscreen mode.
+	
 	All of the integration parameters are set in this column. Scroll down to see them all, and click the [❓ HELP ❓] boxes for further explanation.
 
 	Tip! For sliders, click on them and use your arrow keys to make small adjustments.
 
-	The main integration plot is displayed on the upper left of the screen. When parameters are changed, the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
+	The main integration plot is displayed on the upper left of the screen. When parameters are changed (or when you start the interface for the first time) the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
 
-	After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and an interface for exporting your simulation data.
+	After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit.
 
 	At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
+
+	Problems? Try refreshing the page or using the `RESTART` button in the upper right.
 	"""
 
 	blurb2 = md"""
@@ -266,7 +265,7 @@ let
 	$(details("💡 Click me for tutorial! 💡", blurb))
 	"""
 	
-	ad(blurb2, "tip")
+	ad(blurb2, "danger")
 end
 
 # ╔═╡ 6665620f-77f7-4ed5-9d62-4fdbfea21d93
@@ -289,9 +288,12 @@ let
 		md""" 
 		## Interpolants and Fields
 
-		You are currently using the default interpolants, which have the following limits.
+		You are currently using the default interpolants, which have the following limits:
 		
-		$(blurb)""", 
+		$(blurb)
+		
+		Loading custom interpolants coming soon!
+		""", 
 	"tip")
 end
 
@@ -640,6 +642,15 @@ begin
 	land
 end
 
+# ╔═╡ 99b628f1-c072-4d06-a32c-1d0f8d4789bb
+let
+	blurb = md"""
+			# End of interface
+			"""
+
+	ad(blurb, "danger")
+end
+
 # ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
 begin
 	@info "Defining notebook info box."
@@ -708,71 +719,6 @@ begin
 	nothing
 end
 
-# ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
-begin
-	@info "Defining AFAI parameter window."
-	
-	local ui_afai_plot(Child) = md"""
-		Show satellite data: $(Child(CheckBox(default = false))) \
-		Date (yyyy-mm): $(Child(confirm(TextField(5, default = "2018-04"), label = "SET"))) \
-		Week: $(Child(Select(["1", "2", "3", "4"], default = "1"))) \
-		Clouds: $(Child(Select(["Show", "Hide"], default = "Hide"))) \
-		Scale: $(Child(Select(["Log", "Linear"], default = "Log"))) \
-		"""
-	local afai_params = @bind afai_plot_params PlutoUI.combine() do Child
-		ad(ui_afai_plot(Child), "info")
-	end
-
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	bottom: 3rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 98;
-	max-width: 24%;
-	max-height: 20%;
-	background-color: var(--main-bg-color);">
-	$(afai_params)
-	</div>"""
-end
-
-# ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
-begin
-
-@info "Defining AFAI plot window."
-	
-let
-if afai_plot_params[1]
-	try
-		set_theme!(GEO_THEME())
-		global fig_afai = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax_afai = Axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "")
-		local date, week, clouds, scale = afai_plot_params[2:5]
-		local date = DateTime(date, "yyyy-mm") |> yearmonth
-		local week = parse(Int64, week)
-		SargassumFromAFAI.sarg!(ax_afai, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
-		clouds == "Show" ? clouds!(ax_afai, SargassumFromAFAI.DIST_1718[date], week) : nothing
-		SargassumColors.land!(ax_afai)
-	catch
-		global fig_afai = ad(md"""Date out of range! Currently certain months in 2017 and 2018 are supported.""", "warning")
-	end
-
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	bottom: 10rem; 
-	padding: 1px;
-	text-align: center;
-	z-index: 99;
-	max-width: 27%;
-	background-color: var(--main-bg-color);">
-	$(fig_afai)
-	</div>"""
-end
-end
-end
-
 # ╔═╡ ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
 function ymwplusweek2ymw(ymw, n_week)
 	y, m, w = ymw
@@ -798,7 +744,7 @@ let
 		
 	afyrmn(Child) = Child(Select(VALID_AFAI_YEAR_MONTHS, default = (2018, 4)))
 	afwk(Child) = Child(Select([1, 2, 3, 4], default = 1))
-	aflv(Child) = Child(PlutoUI.Slider(1:20; default=5, show_value = true))
+	aflv(Child) = Child(PlutoUI.Slider(1:20; default=1, show_value = true))
 		
 	ui_afai(Child) = md"""
 	### AFAI-based initial distribution parameters
@@ -953,7 +899,8 @@ begin
 			springs = springs,
 			connections = connections,
 			gd_model = gd_model,
-			land = land
+			land = land,
+			n_clumps_max = n_clumps_max
 		)
 		
 		sol = simulate(rp, showprogress = false)
@@ -968,11 +915,13 @@ begin
 let
 	try
 		plot_type = plot_params[1]
-		lon_min, lon_max, lat_min, lat_max = plot_params[2:5] .|> x -> parse(Float64, x)
 		
 		set_theme!(GEO_THEME())
-		global fig = Figure(size = 2.0 .* (800, 400), figure_padding = (10, 70, 10, 20))
-		ax = Axis(fig[1, 1], limits = (lon_min, lon_max, lat_min, lat_max), title = "")
+		global fig = Figure(
+			size = 2.0 .* (800, 400), 
+			fontsize = 20, 
+			figure_padding = (10, 70, 10, 20))
+		ax = Axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "")
 		if plot_type == "Trajectories"
 			trajectory!(ax, sol)
 		elseif plot_type == "Heat Map"
@@ -1115,9 +1064,9 @@ begin
 	"""
 	
 	local ui_integration_export(Child) = md"""
-		$(details("EXPORT HELP", export_details))
+		$(details("❓ EXPORT HELP ❓", export_details))
 		Directory \
-		$(Child(TextField((30, 2), default = @__DIR__))) \
+		$(Child(TextField((30, 4), default = @__DIR__))) \
 		Name
 		$(Child(TextField(10, default = "my_file_name"))) \
 		Export Type: $(Child(Select(["", ".mat", ".nc", ".png"], default = "")))
@@ -1140,7 +1089,7 @@ begin
 		@htl """<div style="
 		position: fixed; 
 		right: 1rem; 
-		top: 16rem; 
+		top: 10rem; 
 		padding: 1px;
 		text-align: left;
 		z-index: 101;
@@ -1152,22 +1101,90 @@ begin
 end
 
 # ╔═╡ 5fa34147-a71a-43bb-8f5f-689d830508b3
-begin
+let
 	@info "Exporting"
 	try
 	
-		local outfile = joinpath(integration_export_parameters[1], integration_export_parameters[2] * integration_export_parameters[3])
+		outfile = joinpath(integration_export_parameters[1], integration_export_parameters[2] * integration_export_parameters[3])
 
 		if integration_export_parameters[3] == ".mat"
 			rtr2mat(sol, outfile)
 		elseif integration_export_parameters[3] == ".nc"
-			rtr2nc(sol, outfile, range(-100.0, -40.0, length = 134), range(-100.0, -40.0, length = 64))
+			lon_bins = range(-100.0, -40.0, length = 134)
+			lat_bins = range(0.0, 40.0, length = 64)
+			rtr2nc(sol, outfile, lon_bins, lat_bins)
 		elseif integration_export_parameters[3] == ".png"
 			save(outfile, fig)
 		end
 	catch
 		nothing
 	end
+end
+
+# ╔═╡ d31c10fc-1d99-4d49-9a28-111b993d0936
+let
+	@info "Defining AFAI parameter window."
+
+	sat(Child) = Child(CheckBox(default = false))
+	afyrmn(Child) = Child(Select(VALID_AFAI_YEAR_MONTHS, default = (2018, 4)))
+	wk(Child) = Child(Select([1, 2, 3, 4], default = 1))
+	clouds(Child) = Child(Select(["Show", "Hide"], default = "Hide"))
+	scl(Child) = Child(Select(["Log", "Linear"], default = "Log"))
+
+	ui_afai_plot(Child) = md"""
+	Show satellite data: $(sat(Child)) 
+	
+	|               |                   |               |                   |
+	|:-------------:|:-----------------:|:-------------:|:-----------------:|
+	| Date          | $(afyrmn(Child))  | Week          | $(wk(Child))  |
+	| Clouds        | $(clouds(Child))  | Scale         | $(scl(Child)) |
+	"""
+	afai_params = @bind afai_plot_params PlutoUI.combine() do Child
+		ad(ui_afai_plot(Child), "info")
+	end
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 3rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 98;
+	max-width: 24%;
+	max-height: 20%;
+	background-color: var(--main-bg-color);">
+	$(afai_params)
+	</div>"""
+end
+
+# ╔═╡ 4ff1d478-90de-42ad-af3c-7085cec44e41
+let
+@info "Defining AFAI plot window."	
+	
+if afai_plot_params[1]
+	set_theme!(GEO_THEME())
+	global fig_afai = Figure(
+			size = 2.0 .* (800, 400), 
+			fontsize = 20, 
+			figure_padding = (10, 70, 10, 20))
+	ax = Axis(fig_afai[1, 1], limits = (-100, -40, 0, 40), title = "")
+	date, week, clouds, scale = afai_plot_params[2:5]
+	SargassumFromAFAI.sarg!(ax, SargassumFromAFAI.DIST_1718[date], week, log_scale = scale == "Log")
+	clouds == "Show" ? clouds!(ax, SargassumFromAFAI.DIST_1718[date], week) : nothing
+	SargassumColors.land!(ax)
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	bottom: 13rem; 
+	padding: 1px;
+	text-align: center;
+	z-index: 99;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(fig_afai)
+	</div>"""
+end
 end
 
 # ╔═╡ Cell order:
@@ -1199,6 +1216,7 @@ end
 # ╟─df24d7ca-2143-481d-80fe-b8f31f0a3bb8
 # ╟─e537ca5d-86d6-423b-a3b9-d9ba503c4d31
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
+# ╟─99b628f1-c072-4d06-a32c-1d0f8d4789bb
 # ╟─66c7f34f-378d-4a37-a112-5032c4cf07a4
 # ╟─4fddac82-52f3-464f-874f-056e8f165ba0
 # ╟─d512eee1-890c-40ce-ab0e-54d1004ad5d2
