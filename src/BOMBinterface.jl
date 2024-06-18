@@ -427,6 +427,7 @@ end
 # ╔═╡ 8c14a852-3bd4-4dda-b812-6c1378d676d5
 let
 	δ, a, σ, α, force_α, τ, force_τ = clump_parameters
+	a = a * 10^(-4)
 	global clumps = ClumpParameters(δ = δ, a = a, σ = σ)
 
 	if force_α
@@ -494,9 +495,9 @@ begin
 end
 
 # ╔═╡ e1fd0825-6b16-4fb6-9358-4252b1bd77e9
-begin
+let
 		
-	local blurb = md"""
+	blurb = md"""
 		### Connections Type: $(@bind conn_type Select(["Full", "None", "Radius", "Nearest"], default = "Nearest"))
 		"""
 	ad(blurb, "info")
@@ -504,10 +505,10 @@ begin
 end
 
 # ╔═╡ 3b123c70-d3b9-4b3d-8c38-f4d3457f079d
-begin
+let
 	if conn_type == "Nearest"
 		
-		local ui_conn_nearest(Child) = md"""
+		ui_conn_nearest(Child) = md"""
 			Number of neighbors: $(Child(PlutoUI.Slider(1:20, default = 2, show_value = true)))
 			"""
 		@bind conn_params PlutoUI.combine() do Child
@@ -516,7 +517,7 @@ begin
 
 	elseif conn_type == "Radius"
 
-		local ui_conn_radius(Child) = md"""
+		ui_conn_radius(Child) = md"""
 			Radius multiple: $(Child(PlutoUI.Slider(0.1:0.1:5.0, default = 2.0, show_value = true)))
 			"""
 		@bind conn_params PlutoUI.combine() do Child
@@ -543,8 +544,12 @@ begin
 	- ``\mu_\text{max}``: Sargassum maximum growth rate.
 	- ``m``: Sargassum mortality rate.
 	- ``k_\text{N}``: Sargassum nitrogen (N) uptake half saturation.
-	- `"clumps minimum"`: the number of clumps will not die below this value (default half the number of initial clumps).
-	- `"clumps maximum"`: the number of clumps will not grow above this value (default twice the number of initial clumps).
+	- ``T_\text{min}``: The temperature below which there is no growth.
+	- ``T_\text{max}``: The temperature above which there is no growth. The optimal growth temperature is taken to be ``(T_{\text{min}} + T_{\text{max}})/2``.
+	- ``S_{\text{min}}``: The threshold for clump death. Smaller values of ``S_{\text{min}}`` makes it harder for clumps to die.
+	- ``S_{\text{max}}``: The threshold for clump growth. Larger values of ``S_{\text{max}}`` makes it harder for clumps to grow.
+	- ``C_{\text{min}}`` the number of clumps will not die below this value multiplied by the initial number of clumps. If ``C_{\text{min}} = 0``, then the integration may stop early if all clumps die.
+	- ``C_{\text{min}}`` the number of clumps will not grow above this value multiplied by the initial number of clumps.
 	"""
 	ad(
 		md""" 
@@ -554,13 +559,47 @@ begin
 end
 
 # ╔═╡ 61ebe90a-60e9-4e77-9a24-a793e4701209
-begin
-		
-	local blurb = md"""
+let
+	blurb = md"""
 		### Life Cycles Model: $(@bind gd_type Select(["Immortal", "Brooks"], default = "Immortal"))
 		"""
 	ad(blurb, "info")
 
+end
+
+# ╔═╡ dd199ecb-16cf-4e58-8918-64077b6c192c
+let
+	if gd_type == "Brooks"
+
+	mu(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
+	m(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
+	kN(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
+	Tmn(Child) = Child(PlutoUI.Slider(5:20; default = 10, show_value = true))
+	Tmx(Child) = Child(PlutoUI.Slider(30:50; default = 40, show_value = true))
+	Smn(Child) = Child(PlutoUI.Slider(-1.0:0.01:0.0; default = -1.0, show_value = true))
+	Smx(Child) = Child(PlutoUI.Slider(0.0:0.01:1.0; default = 1.0, show_value = true))
+	Cmn(Child) = Child(PlutoUI.Slider(0:0.01:1.0; default = 0.0, show_value = true))
+	Cmx(Child) = Child(PlutoUI.Slider(1.0:0.01:3.0; default = 2.0, show_value = true))
+
+	ui_gd_params(Child) = md"""
+	| Parameter             | Units                            | Value           | 
+	|:---------------------:|:--------------------------------:|:---------------:|
+	| ``\mu_{\text{max}}``  |``\times 10^{-2} \, \text{d}``  |$(mu(Child)) |
+	| ``m``                 |``\times 10^{-2} \, \text{d}``  |$(m(Child)) |
+	| ``k_{\text{N}}``      |``\times 10^{-4} \, \text{mmol/m}^3``|$(kN(Child)) |
+	| ``T_{\text{min}}``    | ``\degree \text{C}``            | $(Tmn(Child)) |
+	| ``T_{\text{max}}``    | ``\degree \text{C}``            | $(Tmx(Child)) |
+	| ``S_{\text{min}}``    | ``\cdot``  | $(Smn(Child)) |
+	| ``S_{\text{max}}``    | ``\cdot``  | $(Smx(Child)) |
+	| ``C_{\text{min}}``    | ``\cdot``  | $(Cmn(Child)) |
+	| ``C_{\text{max}}``    | ``\cdot``  | $(Cmx(Child)) |
+	"""
+	
+	@bind gd_params_brooks PlutoUI.combine() do Child
+		ad(ui_gd_params(Child), "info")
+	end
+		
+	end # if
 end
 
 # ╔═╡ e537ca5d-86d6-423b-a3b9-d9ba503c4d31
@@ -605,15 +644,42 @@ end
 begin
 	@info "Defining notebook info box."
 
+	restart_button = HTML("""
+	<!-- the wrapper span -->
+	<div>
+		<button id="myrestart" href="#">Restart</button>
+		
+		<script>
+			const div = currentScript.parentElement
+			const button = div.querySelector("button#myrestart")
+			const cell= div.closest('pluto-cell')
+			console.log(button);
+			button.onclick = function() { restart_nb() };
+			function restart_nb() {
+				console.log("Restarting Notebook");
+			        cell._internal_pluto_actions.send(                    
+			            "restart_process",
+	                            {},
+	                            {
+	                                notebook_id: editor_state.notebook.notebook_id,
+	                            }
+	                        )
+			};
+		</script>
+	</div>
+	""")	
+
 	local blurb = md"""
 	This is a [Pluto notebook](https://plutojl.org/) powered by the [Julia programming language](https://julialang.org/).
 
 	- [GitHub](https://github.com/70Gage70/SargassumInterface.jl)
 	- [How to cite](https://github.com/70Gage70/SargassumInterface.jl)
+	
+	$(restart_button)
 	"""
 
 	local blah = ad(
-		details("ABOUT/CITE", [blurb], open = false), 
+		details("ABOUT/CITE/RESTART", [blurb], open = false), 
 	"warning")
 	
 	@htl """<div style="
@@ -737,7 +803,7 @@ let
 	ui_afai(Child) = md"""
 	### AFAI-based initial distribution parameters
 
-	AFAI distributions are only available at select times.
+	AFAI distributions are only available at certain times.
 	
 	| Year/Month      | Week              | Levels         |
 	|:-----------------:|:-------------------:|:----------------:|
@@ -788,33 +854,6 @@ catch
 	end
 end
 
-# ╔═╡ dd199ecb-16cf-4e58-8918-64077b6c192c
-begin
-	if gd_type == "Immortal"
-		
-		gd_params = (nothing,)
-		nothing
-
-	elseif gd_type == "Brooks"
-		local n_min = string(floor(Int64, n_clumps(ics.ics)/2))
-		local n_max = string(floor(Int64, 2*n_clumps(ics.ics)))
-		local ui_gd_brooks(Child) = md"""
-			``\mu_\text{max}`` [``\text{d}^{-1}``]: $(Child(TextField(default = "0.1"))) \
-			``m`` [``\text{d}^{-1}``]: $(Child(TextField(default = "0.05"))) \
-			``k_\text{N}`` [``\text{mmol N m}^{-3}``]: $(Child(TextField(default = "0.012"))) \
-			`clumps minimum`: $(Child(TextField(default = n_min))) \
-			`clumps maximum`: $(Child(TextField(default = n_max)))
-			"""
-		@bind gd_params PlutoUI.combine() do Child
-			ad(ui_gd_brooks(Child), "info")
-		end
-
-	else 
-		gd_params = (nothing,)
-		nothing
-	end # if
-end
-
 # ╔═╡ 4430e3f8-ee7d-46ab-a98a-573db7815670
 let
 	spring_type, amplitude, tten = spring_parameters
@@ -828,7 +867,11 @@ let
 end
 
 # ╔═╡ c979a8ff-c400-419e-9199-886d17bdda6a
-n_clumps_max = size(ics.ics, 2)
+if gd_type == "Brooks"
+	n_clumps_max = round(Int, size(ics.ics, 2)*gd_params_brooks[end], RoundUp)
+else
+	n_clumps_max = size(ics.ics, 2)
+end
 
 # ╔═╡ 7f4daf85-2b36-4450-bf48-a4d77b4d4af3
 begin
@@ -844,21 +887,28 @@ begin
 end
 
 # ╔═╡ dc6651a1-4c47-4cd7-a831-f37812e8a8e6
-begin
+let
 	if gd_type == "Immortal"
-        gd_model = ImmortalModel(ics)
+        global gd_model = ImmortalModel(n_clumps_max)
 	elseif gd_type == "Brooks"
-		local μ_max, m, k_N, c_min, c_max = gd_params
-		local μ_max, m, k_N = (μ_max, m, k_N) .|> x -> parse(Float64, x)
-		local c_min, c_max = (c_min, c_max) .|> x -> parse(Int64, x)
-        local bmp = BrooksModelParameters(
-            clumps_limits = (c_min, c_max), # the number of clumps can at most double
+		μ_max, m, k_N, T_min, T_max, S_min, S_max, c_min, c_max = gd_params_brooks
+		μ_max = μ_max * 10^(-2)
+		m = m * 10^(-2)
+		k_N = k_N * 10^(-4)
+		c_min = c_min*size(ics.ics, 2) |> x -> round(Int, x, RoundDown)
+		
+        bmp = BrooksModelParameters(
             μ_max = μ_max,
             m = m,
-            k_N = k_N)
-        gd_model = BrooksModel(ics, params = bmp)
+            k_N = k_N,
+			T_min = T_min,
+			T_max = T_max,
+			S_min = S_min,
+			S_max = S_max,
+			clumps_limits = (c_min, n_clumps_max))
+       
+		global gd_model = BrooksModel(n_clumps_max, params = bmp)
     end
-	gd_model
 end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
