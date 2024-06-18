@@ -158,6 +158,17 @@ html"""
 """
 end
 
+# ╔═╡ 04d03599-dc2a-465b-aff6-e24af66969d4
+let
+	@info "Loading default interpolants"
+
+	try
+		itps_load(ITPS_DEFAULT_DIR)
+	catch
+		itps_default_construct(download_data = true)
+	end
+end
+
 # ╔═╡ 7ca9e647-d06e-4815-b30b-eb1a4e5f1577
 md"""
 ## Simulation
@@ -209,10 +220,10 @@ md"""
 """
 
 # ╔═╡ 58d3a9da-c4df-4ec3-953e-1946495945bc
-begin
+let
 	@info "Defining inspected plot options."
 	
-	local ui_inspect_plot(Child) = md"""
+	ui_inspect_plot(Child) = md"""
 		Plot type: $(Child(Select(["Trajectories", "Heat Map"], default = "Trajectories")))
 		"""
 	global plot_window = @bind plot_params PlutoUI.combine() do Child
@@ -652,7 +663,7 @@ let
 end
 
 # ╔═╡ 084700f3-4f35-466f-91e1-f4853c426abf
-begin
+let
 	@info "Defining notebook info box."
 
 	restart_button = HTML("""
@@ -680,7 +691,7 @@ begin
 	</div>
 	""")	
 
-	local blurb = md"""
+	blurb = md"""
 	This is a [Pluto notebook](https://plutojl.org/) powered by the [Julia programming language](https://julialang.org/).
 
 	- [GitHub](https://github.com/70Gage70/SargassumInterface.jl)
@@ -689,7 +700,7 @@ begin
 	$(restart_button)
 	"""
 
-	local blah = ad(
+	blurb2 = ad(
 		details("ABOUT/CITE/RESTART", [blurb], open = false), 
 	"warning")
 	
@@ -702,7 +713,7 @@ begin
 	z-index: 99;
 	max-width: 18%;
 	background-color: var(--main-bg-color);">
-	$(blah)
+	$(blurb2)
 	</div>"""
 end
 
@@ -710,7 +721,7 @@ end
 begin
 	@info "Defining inspect plot trigger."
 	
-	global plot_box = ad(
+	plot_box = ad(
 	md"""
 	Inspect/export: $(@bind inspect_plot CheckBox(default=false))
 	""", 
@@ -858,7 +869,7 @@ let
 end
 
 # ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
-begin
+let
 	@info "Defining reactive plot checkbox."
 	ics;
 	clumps;
@@ -867,7 +878,7 @@ begin
 	gd_model;
 	land;
 	
-	local plot_box = ad(
+	plot_box = ad(
 	md"""
 	Run simulation: $(@bind trigger_calculation CheckBox(default=false))
 	""", 
@@ -908,11 +919,9 @@ begin
 end
 
 # ╔═╡ 846659d3-e922-4aed-90ff-0cbab92b1639
-begin
-
-@info "Defining main plot + small window."
-	
 let
+	@info "Defining main plot + small window."
+	
 	try
 		plot_type = plot_params[1]
 		
@@ -944,96 +953,92 @@ let
 	$(fig)
 	</div>"""
 end
-end
 
 # ╔═╡ 76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
-begin
+let
 
 @info "Defining inspect plot trigger window."
 	
-if trigger_calculation
-
-	@htl """<div style="
-	position: fixed; 
-	left: 12rem; 
-	top: 1rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 100;
-	max-width: 20%;
-	max-height: 10%;
-	background-color: var(--main-bg-color);">
-	$(plot_box)
-	</div>"""
-end
+	if trigger_calculation
+	
+		@htl """<div style="
+		position: fixed; 
+		left: 12rem; 
+		top: 1rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 100;
+		max-width: 20%;
+		max-height: 10%;
+		background-color: var(--main-bg-color);">
+		$(plot_box)
+		</div>"""
+	end
 end
 
 # ╔═╡ 32f6f7a5-19b7-4c71-9d0a-865d4f6d0506
-begin
+let
 
 @info "Defining inspected plot background 1."
 	
-if inspect_plot && trigger_calculation
-
-@htl """<div style="
-position: fixed; 
-left: 1rem; 
-top: 6rem; 
-padding: 1000px;
-text-align: left;
-z-index: 100;
-max-width: 75%;
-background-color: var(--main-bg-color);">
-</div>"""
-
-end
+	if inspect_plot && trigger_calculation
+	
+		@htl """<div style="
+		position: fixed; 
+		left: 1rem; 
+		top: 6rem; 
+		padding: 1000px;
+		text-align: left;
+		z-index: 100;
+		max-width: 75%;
+		background-color: var(--main-bg-color);">
+		</div>"""
+	end
 end
 
 # ╔═╡ a9741ea1-32b7-477a-be23-a3f74fe8c359
-begin
+let
 
 @info "Defining inspected plot background 2."
 	
-if inspect_plot && trigger_calculation
-
-@htl """<div style="
-position: fixed; 
-right: 1rem; 
-top: 0rem; 
-padding: 35%;
-text-align: left;
-z-index: 100;
-max-width: 20%;
-background-color: var(--main-bg-color);">
-</div>"""
-
-end
+	if inspect_plot && trigger_calculation
+	
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 0rem; 
+		padding: 35%;
+		text-align: left;
+		z-index: 100;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		</div>"""
+	end
 end
 
 # ╔═╡ b4a1e899-a142-4513-aa1b-3f65bcdd0b74
-begin
+let
 
 @info "Defining inspected plot."
 	
-if inspect_plot && trigger_calculation
-
-@htl """<div style="
-position: fixed; 
-left: 1rem; 
-top: 6rem; 
-padding: 1px;
-text-align: left;
-z-index: 101;
-max-width: 75%;
-background-color: var(--main-bg-color);">
-$(fig)
-</div>"""
-
-end
+	if inspect_plot && trigger_calculation
+	
+		@htl """<div style="
+		position: fixed; 
+		left: 1rem; 
+		top: 6rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 101;
+		max-width: 75%;
+		background-color: var(--main-bg-color);">
+		$(fig)
+		</div>"""
+	end
 end
 
 # ╔═╡ e75adad7-7416-4962-9308-44e1425a8ff3
-begin
+let
 	@info "Defining inspected plot options window."
 
 	if inspect_plot && trigger_calculation
@@ -1052,10 +1057,10 @@ begin
 end
 
 # ╔═╡ a7de95ce-62b9-40e6-a7f5-1d833bedff87
-begin
+let
 	@info "Defining export options window."
 
-	local export_details = md"""
+	export_details = md"""
 	Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
 
 	Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
@@ -1063,7 +1068,7 @@ begin
 	Select `".png"` to output the figure itself.
 	"""
 	
-	local ui_integration_export(Child) = md"""
+	ui_integration_export(Child) = md"""
 		$(details("❓ EXPORT HELP ❓", export_details))
 		Directory \
 		$(Child(TextField((30, 4), default = @__DIR__))) \
@@ -1228,6 +1233,7 @@ end
 # ╟─084700f3-4f35-466f-91e1-f4853c426abf
 # ╟─589f251d-a2df-4879-9933-4deb95a8003a
 # ╟─d1565b62-ce6e-4e07-a041-f15e4fcc118b
+# ╟─04d03599-dc2a-465b-aff6-e24af66969d4
 # ╟─7ca9e647-d06e-4815-b30b-eb1a4e5f1577
 # ╟─65b2ceb8-40d4-4f97-9541-36e0023c5d6b
 # ╟─2c38594d-7d78-49d8-9597-0b723f56e76f
