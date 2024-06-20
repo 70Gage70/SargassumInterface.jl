@@ -24,7 +24,7 @@ end
 # ╔═╡ d1565b62-ce6e-4e07-a041-f15e4fcc118b
 begin
 	using SargassumColors, SargassumFromAFAI, SargassumBOMB # core
-	using PlutoUI, HypertextLiteral, NativeFileDialog # interactivity in notebook
+	using PlutoUI, HypertextLiteral, NativeFileDialog, PlutoHooks # interactivity in notebook
 	using GLMakie # plots
 	using Dates # dates
 	using JLD2, MAT, NetCDF # io
@@ -296,20 +296,38 @@ begin
 	"tip")
 end
 
-# ╔═╡ 2b240431-dbad-438e-84a9-ba1c413aeb24
+# ╔═╡ 6e7da02d-a6ac-4065-9b8a-370033450646
 let
-	ui_loader = md"""
-	Load custom water interpolant: $(@bind water_load CheckBox(default = false))
+	water(Child) = Child(CheckBox(default = false))
+	wind(Child) = Child(CheckBox(default = false))
+	stokes(Child) = Child(CheckBox(default = false))
+		
+	ui_itp_loader(Child) = md"""
+	### Load custom interpolants
+
+	Check the boxes to open a file dialog to load the indicated interpolant. 
+	
+	Unchecking a box returns to the default interpolants.
+	
+	| Water             | Wind              | Stokes           |
+	|:-----------------:|:-----------------:|:----------------:|
+	| $(water(Child))   | $(wind(Child))    | $(stokes(Child)) |
 	"""
 
-	ad(ui_loader, "info")
+	@bind custom_itp_load PlutoUI.combine() do Child
+		ad(ui_itp_loader(Child), "info")
+	end
 end
+
+# ╔═╡ c6cf756a-1c17-44bc-8655-b2d674888971
+water_load, wind_load, stokes_load = custom_itp_load;
 
 # ╔═╡ 45d67f51-53d1-4d07-8022-168a44408705
 begin
 
 water_custom = false
 
+PlutoHooks.@use_memo([water_load]) do
 	if water_load
 		WATER_PATH = pick_file()
 	
@@ -322,16 +340,8 @@ water_custom = false
 			nothing
 		end
 	end
-
 end
 
-# ╔═╡ 1743027f-1258-46a1-8788-5a3bb2eb08f7
-let
-	ui_loader = md"""
-	Load custom wind interpolant: $(@bind wind_load CheckBox(default = false))
-	"""
-
-	ad(ui_loader, "info")
 end
 
 # ╔═╡ 0afdbfc4-3feb-4e65-a3f2-b6c200aad068
@@ -339,6 +349,7 @@ begin
 
 wind_custom = false
 
+PlutoHooks.@use_memo([wind_load]) do
 	if wind_load
 		WIND_PATH = pick_file()
 	
@@ -347,10 +358,35 @@ wind_custom = false
 			global wind_custom = true
 			@info "Water itp loaded!"
 		catch
-			@info "Water itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WIND_ITP`"
+			@info "Wind itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WIND_ITP`"
 			nothing
 		end
 	end
+
+end
+
+end
+
+# ╔═╡ 7ba608cd-5217-4eb1-a4d8-f0279934ad5c
+begin
+
+stokes_custom = false
+
+PlutoHooks.@use_memo([stokes_load]) do
+	if stokes_load
+		STOKES_PATH = pick_file()
+	
+		try
+			STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
+			global stokes_custom = true
+			@info "Water itp loaded!"
+		catch
+			@info "Wind itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `STOKES_ITP`"
+			nothing
+		end
+	end
+
+end
 
 end
 
@@ -1272,6 +1308,7 @@ end
 let
 	water_blurb = get_limits_blurb(WATER_ITP, water_custom, "Water velocity")
 	wind_blurb = get_limits_blurb(WIND_ITP, wind_custom, "Wind velocity")
+	stokes_blurb = get_limits_blurb(WIND_ITP, stokes_custom, "Stokes drift")
 
 	### FINAL
 
@@ -1279,6 +1316,8 @@ let
 	$(water_blurb)
 
 	$(wind_blurb)
+
+	$(stokes_blurb)
 	"""
 
 	ad(final_blurb, "tip")
@@ -1290,10 +1329,11 @@ end
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─7c21a4ef-098d-47bf-82a7-a1c661e4f196
 # ╟─7f2022c7-a510-46a5-9090-84f58693815c
-# ╠═2b240431-dbad-438e-84a9-ba1c413aeb24
+# ╟─6e7da02d-a6ac-4065-9b8a-370033450646
+# ╟─c6cf756a-1c17-44bc-8655-b2d674888971
 # ╟─45d67f51-53d1-4d07-8022-168a44408705
-# ╟─1743027f-1258-46a1-8788-5a3bb2eb08f7
 # ╟─0afdbfc4-3feb-4e65-a3f2-b6c200aad068
+# ╟─7ba608cd-5217-4eb1-a4d8-f0279934ad5c
 # ╟─52e78695-a940-4a62-820b-71724a947c43
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
