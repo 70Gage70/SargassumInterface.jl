@@ -23,12 +23,12 @@ end
 
 # ╔═╡ d1565b62-ce6e-4e07-a041-f15e4fcc118b
 begin
-	using SargassumBOMB
-	using SargassumFromAFAI
-	using SargassumColors
-	using GLMakie
-	using Dates
-	using PlutoUI, HypertextLiteral
+	using SargassumColors, SargassumFromAFAI, SargassumBOMB # core
+	using PlutoUI, HypertextLiteral, NativeFileDialog # interactivity in notebook
+	using GLMakie # plots
+	using Dates # dates
+	using JLD2, MAT, NetCDF # io
+	
 	@info "Loaded dependencies."
 end
 
@@ -41,6 +41,11 @@ md"""
 ---
 ---
 ---
+---
+"""
+
+# ╔═╡ 52e78695-a940-4a62-820b-71724a947c43
+md"""
 ---
 """
 
@@ -279,33 +284,74 @@ let
 	ad(blurb2, "danger")
 end
 
-# ╔═╡ 6665620f-77f7-4ed5-9d62-4fdbfea21d93
-let
-	x = WATER_ITP.x
-	lon, lat = xy2sph(x.dims[:x], x.dims[:y]) .|> extrema
-	lon = lon .|> x -> round(x, sigdigits = 4)
-	lat = lat .|> x -> round(x, sigdigits = 4)
-
-	tmin, tmax = extrema(x.dims[:t]) .|> time2datetime .|> x -> "$(monthname(x)), $(day(x)), $(year(x))"
-	
-	blurb = md"""
-	|             |            |             |           |       |         |
-	|-------------|------------|-------------|-----------|-------|---------|
-	| Lon min (°) | $(lon[1])  | Lat min (°) | $(lat[1]) | T min | $(tmin) | 
-	| Lon max (°) | $(lon[2])  | Lat max (°) | $(lat[2]) | T max | $(tmax) |
+# ╔═╡ 7c21a4ef-098d-47bf-82a7-a1c661e4f196
+begin
+	local blurb = md"""
+	Blah 
 	"""
-	
 	ad(
 		md""" 
 		## Interpolants and Fields
-
-		You are currently using the default interpolants, which have the following limits:
-		
-		$(blurb)
-		
-		Loading custom interpolants coming soon!
-		""", 
+		$(details("❓ HELP ❓", blurb))""", 
 	"tip")
+end
+
+# ╔═╡ 2b240431-dbad-438e-84a9-ba1c413aeb24
+let
+	ui_loader = md"""
+	Load custom water interpolant: $(@bind water_load CheckBox(default = false))
+	"""
+
+	ad(ui_loader, "info")
+end
+
+# ╔═╡ 45d67f51-53d1-4d07-8022-168a44408705
+begin
+
+water_custom = false
+
+	if water_load
+		WATER_PATH = pick_file()
+	
+		try
+			WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
+			global water_custom = true
+			@info "Water itp loaded!"
+		catch
+			@info "Water itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WATER_ITP`"
+			nothing
+		end
+	end
+
+end
+
+# ╔═╡ 1743027f-1258-46a1-8788-5a3bb2eb08f7
+let
+	ui_loader = md"""
+	Load custom wind interpolant: $(@bind wind_load CheckBox(default = false))
+	"""
+
+	ad(ui_loader, "info")
+end
+
+# ╔═╡ 0afdbfc4-3feb-4e65-a3f2-b6c200aad068
+begin
+
+wind_custom = false
+
+	if wind_load
+		WIND_PATH = pick_file()
+	
+		try
+			WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
+			global wind_custom = true
+			@info "Water itp loaded!"
+		catch
+			@info "Water itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WIND_ITP`"
+			nothing
+		end
+	end
+
 end
 
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
@@ -1192,11 +1238,63 @@ if afai_plot_params[1]
 end
 end
 
+# ╔═╡ f862d2fc-e230-457b-969a-77c599380605
+function get_limits(itp)
+	x = itp.x
+	lon, lat = xy2sph(x.dims[:x], x.dims[:y]) .|> extrema
+	lon = lon .|> x -> round(x, sigdigits = 4)
+	lat = lat .|> x -> round(x, sigdigits = 4)
+
+	tmin, tmax = extrema(x.dims[:t]) .|> time2datetime .|> x -> "$(monthname(x)), $(day(x)), $(year(x))"
+
+	return (lon[1], lon[2], lat[1], lat[2], tmin, tmax)
+end
+
+# ╔═╡ 0c7b91e9-3b9b-4f71-a472-fa88df92d4b0
+function get_limits_blurb(itp, custom::Bool, title::String)
+	lonmin, lonmax, latmin, latmax, tmin, tmax = get_limits(itp)
+
+	kind = !custom ? HTML("""<span style="color:yellow"><b>default</b></span>""") : HTML("""<span style="color:yellow"><b>custom</b></span>""")
+	
+	return md"""
+	### $(title)
+	
+	Using **$(kind)** interpolant with limits:
+	
+	|             |            |             |           |       |         |
+	|-------------|------------|-------------|-----------|-------|---------|
+	| Lon min (°) | $(lonmin)  | Lat min (°) | $(latmin) | T min | $(tmin) | 
+	| Lon max (°) | $(lonmax)  | Lat max (°) | $(latmax) | T max | $(tmax) |
+	"""
+end
+
+# ╔═╡ 7f2022c7-a510-46a5-9090-84f58693815c
+let
+	water_blurb = get_limits_blurb(WATER_ITP, water_custom, "Water velocity")
+	wind_blurb = get_limits_blurb(WIND_ITP, wind_custom, "Wind velocity")
+
+	### FINAL
+
+	final_blurb = md"""
+	$(water_blurb)
+
+	$(wind_blurb)
+	"""
+
+	ad(final_blurb, "tip")
+end
+
 # ╔═╡ Cell order:
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
-# ╟─6665620f-77f7-4ed5-9d62-4fdbfea21d93
+# ╟─7c21a4ef-098d-47bf-82a7-a1c661e4f196
+# ╟─7f2022c7-a510-46a5-9090-84f58693815c
+# ╠═2b240431-dbad-438e-84a9-ba1c413aeb24
+# ╟─45d67f51-53d1-4d07-8022-168a44408705
+# ╟─1743027f-1258-46a1-8788-5a3bb2eb08f7
+# ╟─0afdbfc4-3feb-4e65-a3f2-b6c200aad068
+# ╟─52e78695-a940-4a62-820b-71724a947c43
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
 # ╟─ed4f082b-237c-4b08-b3b9-2f1846b0ecfb
@@ -1271,3 +1369,5 @@ end
 # ╟─67c5ed03-7e1b-4c4d-8fa1-837848a37924
 # ╟─ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
 # ╟─59ae76ce-1655-4173-a368-125805c75497
+# ╟─f862d2fc-e230-457b-969a-77c599380605
+# ╟─0c7b91e9-3b9b-4f71-a472-fa88df92d4b0

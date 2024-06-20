@@ -1,12 +1,16 @@
 name = "SargassumInterface"
 uuid = "30769374-9730-46b0-8d29-e3d67aca2e88"
 authors = ["Gage <gage.bonner@gmail.com>"]
-version = "0.6.2"
+version = "0.7.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
+NativeFileDialog = "e1fe445b-aa65-4df4-81c1-2041507f0fd4"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
