@@ -18,6 +18,7 @@ PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 SargassumBOMB = "b5ee06fe-188d-450a-9f05-8f188668dd15"
 SargassumColors = "d2143393-64d1-4702-ac44-3f87fb4b2e5f"
 SargassumFromAFAI = "db9ac4ac-0b65-4026-8dbd-2bb7cf4c299a"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 julia = "1.10"

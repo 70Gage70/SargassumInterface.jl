@@ -28,12 +28,33 @@ begin
 	using GLMakie # plots
 	using Dates # dates
 	using JLD2, MAT, NetCDF # io
+	using Unitful # units
 	
 	@info "Loaded dependencies."
 end
 
+# ╔═╡ 7fd8cc7c-a2e0-4cae-8448-e6a16d1b0b9c
+module MyUnits
+	using Unitful 
+	@unit naumi "naumi" NauticalMile (1852)*u"m" false
+	@unit knots "knots" Knots (0.5144)*u"m/s" false
+	@affineunit alon "alon" (-180)u"°"
+	@affineunit alat "alat" (-90)u"°"
+
+	Unitful.register(@__MODULE__)
+end
+
 # ╔═╡ 7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 
+
+# ╔═╡ 3f3c11e4-3fd0-47f8-89a3-fc0b774aced1
+md"""
+### TODO
+
+- File picker for plot export?
+- Add tutorial for interpolants
+- Don't update ics, etc. untill press Run simulation to avoid slider bug?
+"""
 
 # ╔═╡ c3eddd51-43c4-42f4-800a-ae9945df1e86
 md"""
@@ -284,18 +305,6 @@ let
 	ad(blurb2, "danger")
 end
 
-# ╔═╡ 7c21a4ef-098d-47bf-82a7-a1c661e4f196
-begin
-	local blurb = md"""
-	Blah 
-	"""
-	ad(
-		md""" 
-		## Interpolants and Fields
-		$(details("❓ HELP ❓", blurb))""", 
-	"tip")
-end
-
 # ╔═╡ 6e7da02d-a6ac-4065-9b8a-370033450646
 let
 	water(Child) = Child(CheckBox(default = false))
@@ -329,14 +338,14 @@ water_custom = false
 
 PlutoHooks.@use_memo([water_load]) do
 	if water_load
-		WATER_PATH = pick_file()
+		WATER_PATH = pick_file(filterlist = "jld2")
 	
 		try
 			WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
 			global water_custom = true
-			@info "Water itp loaded!"
+			@info "Custom water interpolant loaded!"
 		catch
-			@info "Water itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WATER_ITP`"
+			@info "Water itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WATER_ITP`".
 			nothing
 		end
 	end
@@ -351,14 +360,14 @@ wind_custom = false
 
 PlutoHooks.@use_memo([wind_load]) do
 	if wind_load
-		WIND_PATH = pick_file()
+		WIND_PATH = pick_file(filterlist = "jld2")
 	
 		try
 			WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
 			global wind_custom = true
-			@info "Water itp loaded!"
+			@info "Custom wind interpolant loaded!"
 		catch
-			@info "Wind itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `WIND_ITP`"
+			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WIND_ITP`".
 			nothing
 		end
 	end
@@ -374,20 +383,214 @@ stokes_custom = false
 
 PlutoHooks.@use_memo([stokes_load]) do
 	if stokes_load
-		STOKES_PATH = pick_file()
+		STOKES_PATH = pick_file(filterlist = "jld2")
 	
 		try
 			STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
 			global stokes_custom = true
-			@info "Water itp loaded!"
+			@info "Custom Stokes interpolant loaded!"
 		catch
-			@info "Wind itp could not be loaded. The interpolant must be a .jld2 file and contain an `InterpolatedField` variable called `STOKES_ITP`"
+			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `STOKES_ITP`".
 			nothing
 		end
 	end
 
 end
 
+end
+
+# ╔═╡ cb2ae3f7-ee48-43e3-8a98-e89977440305
+let
+	blurb = md"""
+	## Create custom interpolants
+	
+	| Interpolant kind | File type | 
+	|:--:|:--:|
+	| $(@bind itp_make_kind Select(["WATER", "WIND", "STOKES"], default = "WATER")) | $(@bind itp_make_raw_file_type Select(["", ".nc", ".mat"], default = "")) |
+	"""
+		
+	ad(blurb, "info")
+end
+
+# ╔═╡ 7430330c-7bc1-4404-997b-9f2ea1967a41
+if itp_make_raw_file_type == ".mat"
+	itp_make_raw_file = pick_file(filterlist = "mat")
+	@info "Loading MAT file: $(itp_make_raw_file)"
+	nothing
+elseif itp_make_raw_file_type == ".nc"
+	itp_make_raw_file = pick_file(filterlist = "nc")
+	ncinfo(joinpath(@__DIR__, "..", "raw-data", "water.nc"))
+	nothing
+else
+	itp_make_raw_file = ""
+	nothing
+end
+
+# ╔═╡ 13064d2c-b96a-4c93-bcd9-35264ab55cc5
+let
+if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== ""
+
+### LON LAT	
+lonname(Child) = Child(TextField(default = "lon"))
+latname(Child) = Child(TextField(default = "lat"))
+ulnname(Child) = Child(Select([u"°" => "(-180°, 180°)", u"alon" => "(0°, 360°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-180°, 180°)"))
+ultname(Child) = Child(Select([u"°" => "(-90°, 90°)", u"alat" => "(0°, 180°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-90°, 90°)"))
+lonref(Child) = Child(TextField(default = ""))
+latref(Child) = Child(TextField(default = ""))
+	
+blurb_lon_lat(Child) = md"""
+|                   | Longitude         | Latitude          |
+|:-----------------:|:-----------------:|:-----------------:|
+|Name               |$(lonname(Child))  |$(latname(Child))  |
+|Units              |$(ulnname(Child))  |$(ultname(Child))  |
+|Reference          |$(lonref(Child))   |$(latref(Child))   |
+"""
+
+### TIME
+tname(Child) = Child(TextField(10, default = "time"))
+tstart1(Child) = Child(DatePicker(default = Date(2018, 1, )))	
+tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
+tper(Child) = Child(Select([Day => "Day", Hour => "Hour", Minute => "Minute", Second => "Second", Millisecond => "Millisecond"], default = Day))
+	
+blurb_time(Child) = md"""
+| Name              | Start             | Period            |
+|:-----------------:|:-----------------:|:-----------------:|
+|$(tname(Child))    |$(tstart1(Child)) $(tstart2(Child))  |$(tper(Child))  |
+"""
+
+### FIELD
+uxname(Child) = Child(TextField(default = "u"))
+uyname(Child) = Child(TextField(default = "v"))
+vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
+vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
+	
+frem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
+ford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
+fscn(Child) = Child(TextField(default = "scale_factor"))
+foff(Child) = Child(TextField(default = "add_offset"))
+fmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
+
+blurb_field(Child) = md"""
+|    			    |    				|
+|:-----------------:|:-----------------:|
+|``\hat{x}`` name  	|$(uxname(Child))  	|
+|``\hat{y}`` name  	|$(uyname(Child))  	|
+|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
+|Depth axis   		|$(frem(Child))  	|
+|Dim. Order   	    |$(ford(Child))     |
+|Scale factor name  |$(fscn(Child))     |
+|Offset factor name |$(foff(Child))     |
+|Missings name(s)   |$(fmis(Child))     |
+"""
+	
+ui_itp_maker(Child) = md"""
+### Longitude and latitude
+
+$(blurb_lon_lat(Child))
+
+### Time
+
+$(blurb_time(Child))
+
+### Velocity field
+
+$(blurb_field(Child))
+
+### Generate and export: $(Child(CheckBox(default = false)))
+"""
+	
+@bind custom_itp_make PlutoUI.combine() do Child
+		ad(ui_itp_maker(Child), "info")
+	end
+
+else
+nothing
+end
+end
+
+# ╔═╡ c52db42a-97ab-4364-ac58-704baa7aac36
+let
+if itp_make_raw_file_type !== "" && custom_itp_make[20]
+	@info "Generating interpolant..."
+
+	infile = itp_make_raw_file
+	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make[1:6]
+	time_name, t_start_day, t_start_time, t_period = custom_itp_make[7:10]
+	u_name, v_name, vel_num, vel_den = custom_itp_make[11:14]
+	remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make[15:19]
+
+	####################
+	gf = GriddedField(3)
+
+	try
+		if !(lon_units in [u"°", u"alon"]) # have to transform to eqr
+			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
+				units = lon_units)
+			add_spatial_dimension!(gf, infile, lon_name, :lon, u"°", "degrees", 
+				transform = x -> xy2sph(x, 0.0, eqr = eqr)[1])
+		else
+			add_spatial_dimension!(gf, infile, lon_name, :lon, lon_units, "degrees")
+		end
+	
+		if !(lat_units in [u"°", u"alat"]) # have to transform to eqr
+			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
+				units = lat_units)
+			add_spatial_dimension!(gf, infile, lat_name, :lat, u"°", "degrees", 
+				transform = y -> xy2sph(0.0, y, eqr = eqr)[2])
+		else
+			add_spatial_dimension!(gf, infile, lat_name, :lat, lon_units, "degrees")
+		end
+
+	catch e
+		@info "Could not add latitude/longitude variables. $(e)"
+	end
+		
+	try
+		t_start = DateTime(t_start_day + t_start_time)
+		add_temporal_dimension!(gf, infile, time_name, :t, t_start, t_period)
+	catch e
+		@info "Could not add time variable. $(e)"
+	end
+
+	try
+		take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
+		vel_units = vel_num/vel_den
+		missings_name_parsed = String.(split(missings_name, ","))
+		add_field!(gf, infile, u_name, :u, vel_units, "speed",
+			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+		add_field!(gf, infile, v_name, :v, vel_units, "speed",
+			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+	catch e
+		@info "Could not add velocity variables. $(e)"
+	end
+	
+	ranges_increasing!(gf)
+	sph2xy!(gf)
+	
+	itp_make = InterpolatedField(gf)
+	add_derivatives!(itp_make)
+
+	@info "Interpolant generated."
+
+	itp_make_export_path = save_file()
+	outfile = itp_make_export_path * ".jld2"
+
+	try
+		if itp_make_kind == "WATER"
+			jldsave(outfile, WATER_ITP = itp_make)
+		elseif itp_make_kind == "WIND"
+			jldsave(outfile, WIND_ITP = itp_make)
+		elseif itp_make_kind == "STOKES"
+			jldsave(outfile, STOKES_ITP = itp_make)
+		end
+
+		@info "Custom interpolant created!"
+		@info "Reset the interpolant file type to clear or start over."
+	catch
+		@info "Custom interpolant could not be exported."
+	end
+	
+end
 end
 
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
@@ -494,13 +697,13 @@ end
 
 # ╔═╡ d2dd84eb-e2cc-4c32-9966-7803549a993d
 let
-	delta(Child) = Child(PlutoUI.Slider(1.01:0.01:1.30; default = 1.2, show_value = true))
+	delta(Child) = Child(PlutoUI.Slider(1.01:0.01:1.30; default = 1.14, show_value = true))
 	a(Child) = Child(PlutoUI.Slider(0.1:0.1:10.0; default = 1.0, show_value = true))
-	sigma(Child) = Child(PlutoUI.Slider(0.8:0.01:1.2; default = 1.0, show_value = true))
-	alpha(Child) = Child(PlutoUI.Slider(0.1:0.01:3; default = 1.0, show_value = true))
+	sigma(Child) = Child(PlutoUI.Slider(0.5:0.01:1.5; default = 1.2, show_value = true))
+	alpha(Child) = Child(PlutoUI.Slider(0.1:0.01:3; default = 0.33, show_value = true))
 	tau(Child) = Child(PlutoUI.Slider(0.01:0.01:0.4; default = 0.01, show_value = true))
-	forcealpha(Child) = Child(CheckBox(default = false))
-	forcetau(Child) = Child(CheckBox(default = false))
+	forcealpha(Child) = Child(CheckBox(default = true))
+	forcetau(Child) = Child(CheckBox(default = true))
 	
 	
 
@@ -522,15 +725,17 @@ end
 # ╔═╡ 8c14a852-3bd4-4dda-b812-6c1378d676d5
 let
 	δ, a, σ, α, force_α, τ, force_τ = clump_parameters
+	α = α * 0.01
 	a = a * 10^(-4)
 	global clumps = ClumpParameters(δ = δ, a = a, σ = σ)
 
 	if force_α
-		clumps = ClumpParameters(α, clumps.τ, clumps.R, clumps.f, clumps.σ)
+		
+		clumps = ClumpParameters(α, clumps.τ, clumps.R, clumps.Ω, clumps.σ)
 	end
 
 	if force_τ
-		clumps = ClumpParameters(clumps.α, τ, clumps.R, clumps.f, clumps.σ)
+		clumps = ClumpParameters(clumps.α, τ, clumps.R, clumps.Ω, clumps.σ)
 	end
 
 	clumps
@@ -666,13 +871,13 @@ end
 let
 	if gd_type == "Brooks"
 
-	mu(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
-	m(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
-	kN(Child) = Child(PlutoUI.Slider(0.1:0.1:10; default = 1.0, show_value = true))
+	mu(Child) = Child(PlutoUI.Slider(0.1:0.01:10; default = 0.54, show_value = true))
+	m(Child) = Child(PlutoUI.Slider(0.1:0.01:10; default = 0.40, show_value = true))
+	kN(Child) = Child(PlutoUI.Slider(0.1:0.01:10; default = 1.29, show_value = true))
 	Tmn(Child) = Child(PlutoUI.Slider(5:20; default = 10, show_value = true))
 	Tmx(Child) = Child(PlutoUI.Slider(30:50; default = 40, show_value = true))
-	Smn(Child) = Child(PlutoUI.Slider(-1.0:0.01:0.0; default = -1.0, show_value = true))
-	Smx(Child) = Child(PlutoUI.Slider(0.0:0.01:1.0; default = 1.0, show_value = true))
+	Smn(Child) = Child(PlutoUI.Slider(-1.0:0.01:0.0; default = -0.48, show_value = true))
+	Smx(Child) = Child(PlutoUI.Slider(0.0:0.01:1.0; default = 0.1, show_value = true))
 	Cmn(Child) = Child(PlutoUI.Slider(0:0.01:1.0; default = 0.0, show_value = true))
 	Cmx(Child) = Child(PlutoUI.Slider(1.0:0.01:3.0; default = 2.0, show_value = true))
 
@@ -684,8 +889,8 @@ let
 	| ``k_{\text{N}}``      |``\times 10^{-4} \, \text{mmol/m}^3``|$(kN(Child)) |
 	| ``T_{\text{min}}``    | ``\degree \text{C}``            | $(Tmn(Child)) |
 	| ``T_{\text{max}}``    | ``\degree \text{C}``            | $(Tmx(Child)) |
-	| ``S_{\text{min}}``    | ``\cdot``  | $(Smn(Child)) |
-	| ``S_{\text{max}}``    | ``\cdot``  | $(Smx(Child)) |
+	| ``S_{\text{min}}``    | ``\times 10^{-2}``  | $(Smn(Child)) |
+	| ``S_{\text{max}}``    | ``\times 10^{-2}`` | $(Smx(Child)) |
 	| ``C_{\text{min}}``    | ``\cdot``  | $(Cmn(Child)) |
 	| ``C_{\text{max}}``    | ``\cdot``  | $(Cmx(Child)) |
 	"""
@@ -881,7 +1086,7 @@ end
 try
 	y1, m1 = afai_params[1]
 	w1 = afai_params[2]
-	y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
+	y2, m2, w2 = ymwplusweek((y1, m1, w1), tspan_data_afai[1])
 	ad(md"""Integrating from week $(w1) of $(monthname(m1)), $(y1) --> week $(w2) of $(monthname(m2)), $(y2) with $(size(ics.ics,2)) clumps.""", "info")
 catch
 	try
@@ -934,6 +1139,8 @@ let
 		μ_max = μ_max * 10^(-2)
 		m = m * 10^(-2)
 		k_N = k_N * 10^(-4)
+		S_min = S_min * 10^(-2)
+		S_max = S_max * 10^(-2)
 		c_min = c_min*size(ics.ics, 2) |> x -> round(Int, x, RoundDown)
 		
         bmp = BrooksModelParameters(
@@ -1306,6 +1513,9 @@ end
 
 # ╔═╡ 7f2022c7-a510-46a5-9090-84f58693815c
 let
+	help_blurb = md"""
+	Blah 
+	"""
 	water_blurb = get_limits_blurb(WATER_ITP, water_custom, "Water velocity")
 	wind_blurb = get_limits_blurb(WIND_ITP, wind_custom, "Wind velocity")
 	stokes_blurb = get_limits_blurb(WIND_ITP, stokes_custom, "Stokes drift")
@@ -1313,6 +1523,10 @@ let
 	### FINAL
 
 	final_blurb = md"""
+	## Current active interpolants
+
+	$(details("❓ HELP ❓", help_blurb))
+	
 	$(water_blurb)
 
 	$(wind_blurb)
@@ -1325,15 +1539,19 @@ end
 
 # ╔═╡ Cell order:
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
+# ╟─3f3c11e4-3fd0-47f8-89a3-fc0b774aced1
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
-# ╟─7c21a4ef-098d-47bf-82a7-a1c661e4f196
 # ╟─7f2022c7-a510-46a5-9090-84f58693815c
 # ╟─6e7da02d-a6ac-4065-9b8a-370033450646
 # ╟─c6cf756a-1c17-44bc-8655-b2d674888971
 # ╟─45d67f51-53d1-4d07-8022-168a44408705
 # ╟─0afdbfc4-3feb-4e65-a3f2-b6c200aad068
 # ╟─7ba608cd-5217-4eb1-a4d8-f0279934ad5c
+# ╟─cb2ae3f7-ee48-43e3-8a98-e89977440305
+# ╟─7430330c-7bc1-4404-997b-9f2ea1967a41
+# ╟─13064d2c-b96a-4c93-bcd9-35264ab55cc5
+# ╟─c52db42a-97ab-4364-ac58-704baa7aac36
 # ╟─52e78695-a940-4a62-820b-71724a947c43
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
@@ -1411,3 +1629,4 @@ end
 # ╟─59ae76ce-1655-4173-a368-125805c75497
 # ╟─f862d2fc-e230-457b-969a-77c599380605
 # ╟─0c7b91e9-3b9b-4f71-a472-fa88df92d4b0
+# ╟─7fd8cc7c-a2e0-4cae-8448-e6a16d1b0b9c
