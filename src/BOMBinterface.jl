@@ -47,15 +47,6 @@ end
 # ╔═╡ 7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
 
 
-# ╔═╡ 3f3c11e4-3fd0-47f8-89a3-fc0b774aced1
-md"""
-### TODO
-
-- File picker for plot export?
-- Add tutorial for interpolants
-- Don't update ics, etc. untill press Run simulation to avoid slider bug?
-"""
-
 # ╔═╡ c3eddd51-43c4-42f4-800a-ae9945df1e86
 md"""
 ---
@@ -279,34 +270,57 @@ ad(text, kind) = Markdown.MD(Markdown.Admonition(kind, "", [text]))
 
 # ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
 let
-	blurb = md"""
+	tutorial = md"""
 	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
 
-	The interface will look best in fullscreen mode.
+	- The interface will look best in fullscreen mode.
 	
-	All of the integration parameters are set in this column. Scroll down to see them all, and click the [❓ HELP ❓] boxes for further explanation.
+	- All of the integration parameters - including the ability to create and load your own interpolants - are set in this column. Scroll down to see them all, and click the [❓ HELP ❓] boxes for further explanation.
 
-	Tip! For sliders, click on them and use your arrow keys to make small adjustments.
+	- Tip! When adjusting sliders, click on them and use your arrow keys to make small adjustments. Try it: $(@bind test_slide PlutoUI.Slider(1:0.1:10, show_value = true))
 
-	The main integration plot is displayed on the upper left of the screen. When parameters are changed (or when you start the interface for the first time) the plot is hidden. When you are done changing parameters, click `Run simulation` to recompute the plot.
+	- The main integration plot is displayed on the upper left of the screen. When parameters are changed (or when you start the interface for the first time) the plot is hidden. When you are done changing parameters, click `RUN` to recompute the plot.
 
-	After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit.
+	- After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and and interface allowing you to export the data.
 
-	At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
+	- At the bottom left of the screen, the AFAI-derived satellite data can be viewed by checking `Show satellite data` and setting the desired date and plot parameters. Currently, only select months from 2017 and 2018 are available.
 
-	Problems? Try refreshing the page or using the `RESTART` button in the upper right.
+	- At the top right of the screen, further information about the interface can be found.
 	"""
 
-	blurb2 = md"""
+	troubleshooting = md"""
+	- If the progress bar is hanging, or the interface seems unresponsive, refreshing the page will almost always fix this. This is **non-destructive**, you won't lose any of your work. 
+	- If a major problem occurs, press the `RESTART` button in the top right drop-down box. This is **destructive**, you will lose your work. 
+	- If you expected some output, but didn't get any, double check that any entered values adhere to the guidelines in the relevant [❓ HELP ❓] box.
+	- Still having issues? Open an issue on [GitHub](https://github.com/70Gage70/SargassumInterface.jl).
+	"""
+
+	advanced = md"""
+	- All of the code that runs this interface is right here! Click on the eye 👁 icons to the left of each cell to see the code that generated it.
+	- For example, the slider values in this interface have been chosen to assume reasonable ranges. If you wanted to extend those, all you would have to do is open the code and change `Slider(1.0:0.1:10.0)` to `Slider(1.0:0.1:20.0)`.
+	- Want to dig even deeper? See [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl).
+	"""
+
+	blurb = md"""
 	# SargassumBOMB Interface
-	$(details("💡 Click me for tutorial! 💡", blurb))
+	$(details("💡 Click me for tutorial! 💡", tutorial))
+	$(details("🛠️ Troubleshooting 🛠️", troubleshooting))
+	$(details("⚙️ Advanced Usage ⚙️", advanced))
 	"""
 	
-	ad(blurb2, "danger")
+	ad(blurb, "danger")
 end
 
 # ╔═╡ 6e7da02d-a6ac-4065-9b8a-370033450646
 let
+	itp_loader_help = md"""
+	- Here you can load any custom interpolants you have created. Check the box of the associated interpolant you would like to load. Uncheck the box to return to the default interpolants.
+
+	- This will open up a prompt for you to pick a file. Interpolants are stored in the `.jld2` file format.
+
+	- To make your own interpolants, see the next section of the interface.
+	"""
+	
 	water(Child) = Child(CheckBox(default = false))
 	wind(Child) = Child(CheckBox(default = false))
 	stokes(Child) = Child(CheckBox(default = false))
@@ -314,9 +328,7 @@ let
 	ui_itp_loader(Child) = md"""
 	### Load custom interpolants
 
-	Check the boxes to open a file dialog to load the indicated interpolant. 
-	
-	Unchecking a box returns to the default interpolants.
+	$(details("❓ HELP ❓", itp_loader_help))
 	
 	| Water             | Wind              | Stokes           |
 	|:-----------------:|:-----------------:|:----------------:|
@@ -401,196 +413,25 @@ end
 
 # ╔═╡ cb2ae3f7-ee48-43e3-8a98-e89977440305
 let
+	help = md"""
+	- This part of the interface will allow you to create custom interpolants from raw data. The raw data is assumed to be uniformly gridded.
+
+	- Your data must be stored in either a `.nc` or `.mat` format. When you choose the appropriate format, a prompt will open and you may select your file.
+
+	- The interface will expand with further instructions.
+	"""
+	
 	blurb = md"""
 	## Create custom interpolants
+
+	$(details("❓ HELP ❓", help))
 	
 	| Interpolant kind | File type | 
 	|:--:|:--:|
-	| $(@bind itp_make_kind Select(["WATER", "WIND", "STOKES"], default = "WATER")) | $(@bind itp_make_raw_file_type Select(["", ".nc", ".mat"], default = "")) |
+	| $(@bind itp_make_kind Select(["WATER", "WIND", "STOKES"], default = "WATER")) | $(@bind itp_make_raw_file_type Select(["", ".nc", ".mat (under construction)"], default = "")) |
 	"""
 		
 	ad(blurb, "info")
-end
-
-# ╔═╡ 7430330c-7bc1-4404-997b-9f2ea1967a41
-if itp_make_raw_file_type == ".mat"
-	itp_make_raw_file = pick_file(filterlist = "mat")
-	@info "Loading MAT file: $(itp_make_raw_file)"
-	nothing
-elseif itp_make_raw_file_type == ".nc"
-	itp_make_raw_file = pick_file(filterlist = "nc")
-	ncinfo(joinpath(@__DIR__, "..", "raw-data", "water.nc"))
-	nothing
-else
-	itp_make_raw_file = ""
-	nothing
-end
-
-# ╔═╡ 13064d2c-b96a-4c93-bcd9-35264ab55cc5
-let
-if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== ""
-
-### LON LAT	
-lonname(Child) = Child(TextField(default = "lon"))
-latname(Child) = Child(TextField(default = "lat"))
-ulnname(Child) = Child(Select([u"°" => "(-180°, 180°)", u"alon" => "(0°, 360°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-180°, 180°)"))
-ultname(Child) = Child(Select([u"°" => "(-90°, 90°)", u"alat" => "(0°, 180°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-90°, 90°)"))
-lonref(Child) = Child(TextField(default = ""))
-latref(Child) = Child(TextField(default = ""))
-	
-blurb_lon_lat(Child) = md"""
-|                   | Longitude         | Latitude          |
-|:-----------------:|:-----------------:|:-----------------:|
-|Name               |$(lonname(Child))  |$(latname(Child))  |
-|Units              |$(ulnname(Child))  |$(ultname(Child))  |
-|Reference          |$(lonref(Child))   |$(latref(Child))   |
-"""
-
-### TIME
-tname(Child) = Child(TextField(10, default = "time"))
-tstart1(Child) = Child(DatePicker(default = Date(2018, 1, )))	
-tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
-tper(Child) = Child(Select([Day => "Day", Hour => "Hour", Minute => "Minute", Second => "Second", Millisecond => "Millisecond"], default = Day))
-	
-blurb_time(Child) = md"""
-| Name              | Start             | Period            |
-|:-----------------:|:-----------------:|:-----------------:|
-|$(tname(Child))    |$(tstart1(Child)) $(tstart2(Child))  |$(tper(Child))  |
-"""
-
-### FIELD
-uxname(Child) = Child(TextField(default = "u"))
-uyname(Child) = Child(TextField(default = "v"))
-vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
-vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
-	
-frem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
-ford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
-fscn(Child) = Child(TextField(default = "scale_factor"))
-foff(Child) = Child(TextField(default = "add_offset"))
-fmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
-
-blurb_field(Child) = md"""
-|    			    |    				|
-|:-----------------:|:-----------------:|
-|``\hat{x}`` name  	|$(uxname(Child))  	|
-|``\hat{y}`` name  	|$(uyname(Child))  	|
-|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
-|Depth axis   		|$(frem(Child))  	|
-|Dim. Order   	    |$(ford(Child))     |
-|Scale factor name  |$(fscn(Child))     |
-|Offset factor name |$(foff(Child))     |
-|Missings name(s)   |$(fmis(Child))     |
-"""
-	
-ui_itp_maker(Child) = md"""
-### Longitude and latitude
-
-$(blurb_lon_lat(Child))
-
-### Time
-
-$(blurb_time(Child))
-
-### Velocity field
-
-$(blurb_field(Child))
-
-### Generate and export: $(Child(CheckBox(default = false)))
-"""
-	
-@bind custom_itp_make PlutoUI.combine() do Child
-		ad(ui_itp_maker(Child), "info")
-	end
-
-else
-nothing
-end
-end
-
-# ╔═╡ c52db42a-97ab-4364-ac58-704baa7aac36
-let
-if itp_make_raw_file_type !== "" && custom_itp_make[20]
-	@info "Generating interpolant..."
-
-	infile = itp_make_raw_file
-	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make[1:6]
-	time_name, t_start_day, t_start_time, t_period = custom_itp_make[7:10]
-	u_name, v_name, vel_num, vel_den = custom_itp_make[11:14]
-	remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make[15:19]
-
-	####################
-	gf = GriddedField(3)
-
-	try
-		if !(lon_units in [u"°", u"alon"]) # have to transform to eqr
-			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
-				units = lon_units)
-			add_spatial_dimension!(gf, infile, lon_name, :lon, u"°", "degrees", 
-				transform = x -> xy2sph(x, 0.0, eqr = eqr)[1])
-		else
-			add_spatial_dimension!(gf, infile, lon_name, :lon, lon_units, "degrees")
-		end
-	
-		if !(lat_units in [u"°", u"alat"]) # have to transform to eqr
-			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
-				units = lat_units)
-			add_spatial_dimension!(gf, infile, lat_name, :lat, u"°", "degrees", 
-				transform = y -> xy2sph(0.0, y, eqr = eqr)[2])
-		else
-			add_spatial_dimension!(gf, infile, lat_name, :lat, lon_units, "degrees")
-		end
-
-	catch e
-		@info "Could not add latitude/longitude variables. $(e)"
-	end
-		
-	try
-		t_start = DateTime(t_start_day + t_start_time)
-		add_temporal_dimension!(gf, infile, time_name, :t, t_start, t_period)
-	catch e
-		@info "Could not add time variable. $(e)"
-	end
-
-	try
-		take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
-		vel_units = vel_num/vel_den
-		missings_name_parsed = String.(split(missings_name, ","))
-		add_field!(gf, infile, u_name, :u, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
-		add_field!(gf, infile, v_name, :v, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
-	catch e
-		@info "Could not add velocity variables. $(e)"
-	end
-	
-	ranges_increasing!(gf)
-	sph2xy!(gf)
-	
-	itp_make = InterpolatedField(gf)
-	add_derivatives!(itp_make)
-
-	@info "Interpolant generated."
-
-	itp_make_export_path = save_file()
-	outfile = itp_make_export_path * ".jld2"
-
-	try
-		if itp_make_kind == "WATER"
-			jldsave(outfile, WATER_ITP = itp_make)
-		elseif itp_make_kind == "WIND"
-			jldsave(outfile, WIND_ITP = itp_make)
-		elseif itp_make_kind == "STOKES"
-			jldsave(outfile, STOKES_ITP = itp_make)
-		end
-
-		@info "Custom interpolant created!"
-		@info "Reset the interpolant file type to clear or start over."
-	catch
-		@info "Custom interpolant could not be exported."
-	end
-	
-end
 end
 
 # ╔═╡ 8f0df9e4-3cc9-4265-9727-14bd7cf4497f
@@ -1004,6 +845,30 @@ let
 	</div>"""
 end
 
+# ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
+let
+	@info "Defining reactive plot button."
+
+	plot_box = ad(
+	md"""
+	Simulation: $(@bind trigger_calculation CounterButton("RUN"))
+	""", 
+	"danger")
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	top: 1rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 20%;
+	max-height: 10%;
+	background-color: var(--main-bg-color);">
+	$(plot_box)
+	</div>"""
+end
+
 # ╔═╡ 78a2638f-f10e-443f-835e-0c8454981617
 begin
 	@info "Defining inspect plot trigger."
@@ -1017,12 +882,98 @@ begin
 	nothing
 end
 
-# ╔═╡ ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
-function ymwplusweek2ymw(ymw, n_week)
-	y, m, w = ymw
-	new_months, new_weeks = (0, 1) .+ divrem(w + n_week - 1, 4)
-	new_years, new_months = (0, 1) .+ divrem(m + new_months - 1, 12)
-	return (y + new_years, new_months, new_weeks)
+# ╔═╡ 32f6f7a5-19b7-4c71-9d0a-865d4f6d0506
+let
+
+@info "Defining inspected plot background 1."
+	
+	if inspect_plot
+	
+		@htl """<div style="
+		position: fixed; 
+		left: 1rem; 
+		top: 6rem; 
+		padding: 1000px;
+		text-align: left;
+		z-index: 100;
+		max-width: 75%;
+		background-color: var(--main-bg-color);">
+		</div>"""
+	end
+end
+
+# ╔═╡ a9741ea1-32b7-477a-be23-a3f74fe8c359
+let
+
+@info "Defining inspected plot background 2."
+	
+	if inspect_plot
+	
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 0rem; 
+		padding: 35%;
+		text-align: left;
+		z-index: 100;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		</div>"""
+	end
+end
+
+# ╔═╡ e75adad7-7416-4962-9308-44e1425a8ff3
+let
+	@info "Defining inspected plot options window."
+
+	if inspect_plot
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 6rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 101;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		$(ad(plot_window, "info"))
+		</div>"""
+	end
+end
+
+# ╔═╡ a7de95ce-62b9-40e6-a7f5-1d833bedff87
+let
+	@info "Defining export options window."
+
+	export_details = md"""
+	Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
+
+	Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
+
+	Select `".png"` to output the figure itself.
+	"""
+	
+	export_blurb = md"""
+	$(details("❓ EXPORT HELP ❓", export_details))
+	Type: $(@bind export_type Select([".mat", ".nc", ".png"], default = ".mat"))
+	$(@bind export_button CounterButton("EXPORT"))
+	"""
+	
+	export_blurb = ad(export_blurb, "info")
+	
+	if inspect_plot
+		@htl """<div style="
+		position: fixed; 
+		right: 1rem; 
+		top: 10rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 101;
+		max-width: 20%;
+		background-color: var(--main-bg-color);">
+		$(export_blurb)
+		</div>"""
+	end
 end
 
 # ╔═╡ 59ae76ce-1655-4173-a368-125805c75497
@@ -1075,7 +1026,7 @@ let
 		y1, m1 = afai_params[1]
 		w1 = afai_params[2]
 		levels = afai_params[3]
-		y2, m2, w2 = ymwplusweek2ymw((y1, m1, w1), tspan_data_afai[1])
+		y2, m2, w2 = ymwplusweek((y1, m1, w1), tspan_data_afai[1])
 		tspan = (ymw2time(y1, m1, w1), ymw2time(y2, m2, w2))
 		dist = SargassumFromAFAI.DIST_1718[(y1, m1)]
 		global ics = InitialConditions(tspan, dist, [w1], levels)
@@ -1157,53 +1108,24 @@ let
     end
 end
 
-# ╔═╡ e25ab537-8be8-46e1-9b8c-e9c1f8a4dc30
-let
-	@info "Defining reactive plot checkbox."
-	ics;
-	clumps;
-	springs;
-	connections;
-	gd_model;
-	land;
-	
-	plot_box = ad(
-	md"""
-	Run simulation: $(@bind trigger_calculation CheckBox(default=false))
-	""", 
-	"danger")
-
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	top: 1rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 100;
-	max-width: 20%;
-	max-height: 10%;
-	background-color: var(--main-bg-color);">
-	$(plot_box)
-	</div>"""
-end
-
 # ╔═╡ d355db80-b403-4200-a4b4-a6eb6f13a79e
 begin
 	@info "Calculating integration."
-	
-	if trigger_calculation
 
-		rp = RaftParameters(
-			ics = ics,
-			clumps = clumps,
-			springs = springs,
-			connections = connections,
-			gd_model = gd_model,
-			land = land,
-			n_clumps_max = n_clumps_max
-		)
-		
-		sol = simulate(rp, showprogress = false)
+	rp = RaftParameters(
+				ics = ics,
+				clumps = clumps,
+				springs = springs,
+				connections = connections,
+				gd_model = gd_model,
+				land = land,
+				n_clumps_max = n_clumps_max
+			)
+	
+	@use_memo([trigger_calculation]) do
+		if trigger_calculation > 0
+			global sol = simulate(rp, showprogress = false)
+		end
 	end
 end
 
@@ -1226,21 +1148,35 @@ let
 			trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
 		end
 		SargassumColors.land!(ax)
-	catch
-		global fig = ad(md"""The plot has not been generated yet or the integration parameters have changed.""", "warning")
-	end
 
-	@htl """<div style="
-	position: fixed; 
-	left: 1rem; 
-	top: 6rem; 
-	padding: 1px;
-	text-align: left;
-	z-index: 100;
-	max-width: 27%;
-	background-color: var(--main-bg-color);">
-	$(fig)
-	</div>"""
+		@htl """<div style="
+		position: fixed; 
+		left: 1rem; 
+		top: 6rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 100;
+		max-width: 27%;
+		background-color: var(--main-bg-color);">
+		$(fig)
+		</div>"""
+	catch
+		global fig = nothing
+		
+		bad_fig = ad(md"""The plot has not been generated yet or the integration parameters have changed.""", "warning")
+
+		@htl """<div style="
+		position: fixed; 
+		left: 1rem; 
+		top: 6rem; 
+		padding: 1px;
+		text-align: left;
+		z-index: 100;
+		max-width: 27%;
+		background-color: var(--main-bg-color);">
+		$(bad_fig)
+		</div>"""
+	end
 end
 
 # ╔═╡ 76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
@@ -1248,8 +1184,8 @@ let
 
 @info "Defining inspect plot trigger window."
 	
-	if trigger_calculation
-	
+	if fig !== nothing
+		
 		@htl """<div style="
 		position: fixed; 
 		left: 12rem; 
@@ -1265,52 +1201,12 @@ let
 	end
 end
 
-# ╔═╡ 32f6f7a5-19b7-4c71-9d0a-865d4f6d0506
-let
-
-@info "Defining inspected plot background 1."
-	
-	if inspect_plot && trigger_calculation
-	
-		@htl """<div style="
-		position: fixed; 
-		left: 1rem; 
-		top: 6rem; 
-		padding: 1000px;
-		text-align: left;
-		z-index: 100;
-		max-width: 75%;
-		background-color: var(--main-bg-color);">
-		</div>"""
-	end
-end
-
-# ╔═╡ a9741ea1-32b7-477a-be23-a3f74fe8c359
-let
-
-@info "Defining inspected plot background 2."
-	
-	if inspect_plot && trigger_calculation
-	
-		@htl """<div style="
-		position: fixed; 
-		right: 1rem; 
-		top: 0rem; 
-		padding: 35%;
-		text-align: left;
-		z-index: 100;
-		max-width: 20%;
-		background-color: var(--main-bg-color);">
-		</div>"""
-	end
-end
-
 # ╔═╡ b4a1e899-a142-4513-aa1b-3f65bcdd0b74
 let
 
 @info "Defining inspected plot."
 	
-	if inspect_plot && trigger_calculation
+	if inspect_plot
 	
 		@htl """<div style="
 		position: fixed; 
@@ -1326,92 +1222,24 @@ let
 	end
 end
 
-# ╔═╡ e75adad7-7416-4962-9308-44e1425a8ff3
-let
-	@info "Defining inspected plot options window."
-
-	if inspect_plot && trigger_calculation
-		@htl """<div style="
-		position: fixed; 
-		right: 1rem; 
-		top: 6rem; 
-		padding: 1px;
-		text-align: left;
-		z-index: 101;
-		max-width: 20%;
-		background-color: var(--main-bg-color);">
-		$(ad(plot_window, "info"))
-		</div>"""
-	end
-end
-
-# ╔═╡ a7de95ce-62b9-40e6-a7f5-1d833bedff87
-let
-	@info "Defining export options window."
-
-	export_details = md"""
-	Select the `".mat"` type to export the raw trajectory data in [MATLAB's file format](https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html). Choose this option if you want the most control over the data.
-
-	Select the `".nc"` type to export binned trajectory data in a [NetCDF file format](https://github.com/JuliaGeo/NetCDF.jl). Choose this option if you primarily need distribution data.
-
-	Select `".png"` to output the figure itself.
-	"""
-	
-	ui_integration_export(Child) = md"""
-		$(details("❓ EXPORT HELP ❓", export_details))
-		Directory \
-		$(Child(TextField((30, 4), default = @__DIR__))) \
-		Name
-		$(Child(TextField(10, default = "my_file_name"))) \
-		Export Type: $(Child(Select(["", ".mat", ".nc", ".png"], default = "")))
-		"""
-
-	try
-		sol;
-		
-		export_blurb = @bind integration_export_parameters confirm(PlutoUI.combine() do Child
-			 ui_integration_export(Child)
-		end,
-		label = "EXPORT")
-
-		global export_options = ad(export_blurb, "info")
-	catch
-		nothing
-	end
-	
-	if inspect_plot && trigger_calculation
-		@htl """<div style="
-		position: fixed; 
-		right: 1rem; 
-		top: 10rem; 
-		padding: 1px;
-		text-align: left;
-		z-index: 101;
-		max-width: 20%;
-		background-color: var(--main-bg-color);">
-		$(export_options)
-		</div>"""
-	end
-end
-
 # ╔═╡ 5fa34147-a71a-43bb-8f5f-689d830508b3
 let
 	@info "Exporting"
-	try
-	
-		outfile = joinpath(integration_export_parameters[1], integration_export_parameters[2] * integration_export_parameters[3])
 
-		if integration_export_parameters[3] == ".mat"
-			rtr2mat(sol, outfile)
-		elseif integration_export_parameters[3] == ".nc"
-			lon_bins = range(-100.0, -40.0, length = 134)
-			lat_bins = range(0.0, 40.0, length = 64)
-			rtr2nc(sol, outfile, lon_bins, lat_bins)
-		elseif integration_export_parameters[3] == ".png"
-			save(outfile, fig)
+	@use_memo([export_button]) do
+		if export_button > 0
+			outfile = save_file()
+	
+			if export_type == ".mat"
+				rtr2mat(sol, outfile * ".mat")
+			elseif export_type == ".nc"
+				lon_bins = range(-100.0, -40.0, length = 134)
+				lat_bins = range(0.0, 40.0, length = 64)
+				rtr2nc(sol, outfile * ".nc", lon_bins, lat_bins)
+			elseif export_type == ".png"
+				save(outfile * ".png", fig)
+			end
 		end
-	catch
-		nothing
 	end
 end
 
@@ -1514,7 +1342,7 @@ end
 # ╔═╡ 7f2022c7-a510-46a5-9090-84f58693815c
 let
 	help_blurb = md"""
-	Blah 
+	This box shows you details of the active interpolants "at-a-glance". Refer to this to ensure that your integration ranges fall within these limits.
 	"""
 	water_blurb = get_limits_blurb(WATER_ITP, water_custom, "Water velocity")
 	wind_blurb = get_limits_blurb(WIND_ITP, wind_custom, "Wind velocity")
@@ -1537,9 +1365,251 @@ let
 	ad(final_blurb, "tip")
 end
 
+# ╔═╡ cbade461-3782-428c-9f3f-218646adfb4b
+function clean_matdict(dict)
+	labels = collect(keys(dict))
+	d = Dict{String, Any}()
+
+	for l in labels
+		if ndims(dict[l]) == 2 && size(dict[l], 2) == 1
+			d[l] = vec(dict[l])
+		else
+			d[l] = dict[l]
+		end
+	end
+
+	return d
+end
+
+# ╔═╡ 621934b4-6454-470d-a72b-a522fa723d50
+function matinfo(dict)
+	labels = collect(keys(dict))
+	sizes = [size(dict[v]) for v in labels]
+
+	println("MAT FILE")
+	println("--------")
+	println("name:size")
+    for i = 1:length(labels)
+		println("$(labels[i]): $(sizes[i])")
+	end
+end
+
+# ╔═╡ 7430330c-7bc1-4404-997b-9f2ea1967a41
+### SELECT FILE TO LOAD
+if itp_make_raw_file_type == ".mat"
+	itp_make_raw_file = pick_file(filterlist = "mat")
+	matdict = clean_matdict(matread(itp_make_raw_file))
+	matinfo(matdict)
+	nothing
+elseif itp_make_raw_file_type == ".nc"
+	itp_make_raw_file = pick_file(filterlist = "nc")
+	ncinfo(joinpath(@__DIR__, "..", "raw-data", "water.nc"))
+	nothing
+else
+	itp_make_raw_file = ""
+	nothing
+end
+
+# ╔═╡ 13064d2c-b96a-4c93-bcd9-35264ab55cc5
+### NETCDF FILE DATA ENTRY
+let
+if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== ""
+
+### LON LAT	
+lonname(Child) = Child(TextField(default = "lon"))
+latname(Child) = Child(TextField(default = "lat"))
+ulnname(Child) = Child(Select([u"°" => "(-180°, 180°)", u"alon" => "(0°, 360°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-180°, 180°)"))
+ultname(Child) = Child(Select([u"°" => "(-90°, 90°)", u"alat" => "(0°, 180°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-90°, 90°)"))
+lonref(Child) = Child(TextField(default = ""))
+latref(Child) = Child(TextField(default = ""))
+	
+blurb_lon_lat(Child) = md"""
+|                   | Longitude         | Latitude          |
+|:-----------------:|:-----------------:|:-----------------:|
+|Name               |$(lonname(Child))  |$(latname(Child))  |
+|Units              |$(ulnname(Child))  |$(ultname(Child))  |
+|Reference          |$(lonref(Child))   |$(latref(Child))   |
+"""
+
+### TIME
+tname(Child) = Child(TextField(10, default = "time"))
+tstart1(Child) = Child(DatePicker(default = Date(2018, 1, )))	
+tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
+tper(Child) = Child(Select([Day => "Day", Hour => "Hour", Minute => "Minute", Second => "Second", Millisecond => "Millisecond"], default = Day))
+	
+blurb_time(Child) = md"""
+| Name              | Start             | Period            |
+|:-----------------:|:-----------------:|:-----------------:|
+|$(tname(Child))    |$(tstart1(Child)) $(tstart2(Child))  |$(tper(Child))  |
+"""
+
+### FIELD
+uxname(Child) = Child(TextField(default = "u"))
+uyname(Child) = Child(TextField(default = "v"))
+vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
+vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
+	
+frem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
+ford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
+fscn(Child) = Child(TextField(default = "scale_factor"))
+foff(Child) = Child(TextField(default = "add_offset"))
+fmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
+
+blurb_field(Child) = md"""
+|    			    |    				|
+|:-----------------:|:-----------------:|
+|``\hat{x}`` name  	|$(uxname(Child))  	|
+|``\hat{y}`` name  	|$(uyname(Child))  	|
+|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
+|Depth axis   		|$(frem(Child))  	|
+|Dim. Order   	    |$(ford(Child))     |
+|Scale factor name  |$(fscn(Child))     |
+|Offset factor name |$(foff(Child))     |
+|Missings name(s)   |$(fmis(Child))     |
+"""
+
+help_lonlat = md"""
+- `Name`: The name of the lon/lat variables in your file.
+- `Units`: The units of the lon/lat variables in your file. 
+- `Reference`: If you selected non-degree units, you must provide the reference longitude and latitude so that they may be converted to spherical coordinates.
+"""
+
+help_time = md"""
+- `Name`: The name of the time variable in your file.
+- `Start`: The value of the time variable will be of the form `X since Y`, e.g. `seconds since January 1, 1970`. This quantity is `Y`.
+- `Period`: This quantity is `X` as defined above.
+"""
+
+help_field = md"""
+- ``\hat{x}`` name: The name of the ``x`` component of the velocity in your file.
+- ``\hat{y}`` name: The name of the ``y`` component of the velocity in your file.
+- `Field units`: The units of the velocity in your file.
+- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
+- `Dim. order`: Enter the dimension order of the velocities.
+- `Scale factor`: Enter the name of the scale factor (if none is found by the given name, it is taken to be ``1``).
+- `Offset factor`: Enter the name of the offset factor (if none is found by the given name, it is taken to be ``0``).
+- `Missings factor`: Enter the name of the attribute(s) that define the value of missing or `NaN` data.
+"""
+	
+ui_itp_maker(Child) = md"""
+### Longitude and latitude
+
+$(details("❓ HELP ❓", help_lonlat))
+
+$(blurb_lon_lat(Child))
+
+### Time
+
+$(details("❓ HELP ❓", help_time))
+
+$(blurb_time(Child))
+
+### Velocity field
+
+$(details("❓ HELP ❓", help_field))
+
+$(blurb_field(Child))
+
+### Generate and export: $(Child(CheckBox(default = false)))
+"""
+	
+@bind custom_itp_make_nc PlutoUI.combine() do Child
+		ad(ui_itp_maker(Child), "info")
+	end
+
+else
+	nothing
+end
+end
+
+# ╔═╡ c52db42a-97ab-4364-ac58-704baa7aac36
+### NETCDF FILE GENERATE AND EXPORT
+let
+if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== "" && custom_itp_make_nc[20]
+	@info "Generating interpolant..."
+
+	infile = itp_make_raw_file
+	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make_nc[1:6]
+	time_name, t_start_day, t_start_time, t_period = custom_itp_make_nc[7:10]
+	u_name, v_name, vel_num, vel_den = custom_itp_make_nc[11:14]
+	remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make_nc[15:19]
+
+	####################
+	gf = GriddedField(3)
+
+	try
+		if !(lon_units in [u"°", u"alon"]) # have to transform to eqr
+			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
+				units = lon_units)
+			add_spatial_dimension!(gf, infile, lon_name, :lon, u"°", "degrees", 
+				transform = x -> xy2sph(x, 0.0, eqr = eqr)[1], force = true)
+		else
+			add_spatial_dimension!(gf, infile, lon_name, :lon, lon_units, "degrees", force = true)
+		end
+	
+		if !(lat_units in [u"°", u"alat"]) # have to transform to eqr
+			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
+				units = lat_units)
+			add_spatial_dimension!(gf, infile, lat_name, :lat, u"°", "degrees", 
+				transform = y -> xy2sph(0.0, y, eqr = eqr)[2], force = true)
+		else
+			add_spatial_dimension!(gf, infile, lat_name, :lat, lon_units, "degrees", force = true)
+		end
+
+	catch e
+		@info "Could not add latitude/longitude variables. $(e)"
+	end
+		
+	try
+		t_start = DateTime(t_start_day + t_start_time)
+		add_temporal_dimension!(gf, infile, time_name, :t, t_start, t_period, force = true)
+	catch e
+		@info "Could not add time variable. $(e)"
+	end
+
+	try
+		take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
+		vel_units = vel_num/vel_den
+		missings_name_parsed = String.(split(missings_name, ","))
+		add_field!(gf, infile, u_name, :u, vel_units, "speed",
+			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+		add_field!(gf, infile, v_name, :v, vel_units, "speed",
+			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+	catch e
+		@info "Could not add velocity variables. $(e)"
+	end
+	
+	ranges_increasing!(gf)
+	sph2xy!(gf)
+	
+	itp_make = InterpolatedField(gf)
+	add_derivatives!(itp_make)
+
+	@info "Interpolant generated."
+
+	itp_make_export_path = save_file()
+	outfile = itp_make_export_path * ".jld2"
+
+	try
+		if itp_make_kind == "WATER"
+			jldsave(outfile, WATER_ITP = itp_make)
+		elseif itp_make_kind == "WIND"
+			jldsave(outfile, WIND_ITP = itp_make)
+		elseif itp_make_kind == "STOKES"
+			jldsave(outfile, STOKES_ITP = itp_make)
+		end
+
+		@info "Custom interpolant created!"
+		@info "Reset the interpolant file type to clear or start over."
+	catch
+		@info "Custom interpolant could not be exported."
+	end
+	
+end
+end
+
 # ╔═╡ Cell order:
 # ╟─7573642c-d0c4-4f44-bd21-c0c7cd0abf2a
-# ╟─3f3c11e4-3fd0-47f8-89a3-fc0b774aced1
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─7f2022c7-a510-46a5-9090-84f58693815c
@@ -1625,8 +1695,9 @@ end
 # ╟─5fa34147-a71a-43bb-8f5f-689d830508b3
 # ╟─e90936ec-f215-4a03-bd75-da2df6308ed0
 # ╟─67c5ed03-7e1b-4c4d-8fa1-837848a37924
-# ╟─ef52dcfa-0be8-4879-9e2f-5d61b5a55ed7
 # ╟─59ae76ce-1655-4173-a368-125805c75497
 # ╟─f862d2fc-e230-457b-969a-77c599380605
 # ╟─0c7b91e9-3b9b-4f71-a472-fa88df92d4b0
 # ╟─7fd8cc7c-a2e0-4cae-8448-e6a16d1b0b9c
+# ╟─cbade461-3782-428c-9f3f-218646adfb4b
+# ╟─621934b4-6454-470d-a72b-a522fa723d50
