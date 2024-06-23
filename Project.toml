@@ -1,7 +1,7 @@
 name = "SargassumInterface"
 uuid = "30769374-9730-46b0-8d29-e3d67aca2e88"
 authors = ["Gage <gage.bonner@gmail.com>"]
-version = "0.7.1"
+version = "0.7.2"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
