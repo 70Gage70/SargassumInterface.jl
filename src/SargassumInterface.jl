@@ -3,15 +3,25 @@ module SargassumInterface
 using Pluto
 
 """
-    run(; force_retry::Bool = false)
+    run(; force_retry::Bool = false, args...)
 
-Start the interface to `SargassumBOMB`. If `force_retry == true`, the notebook will be redownloaded.
+Start the interface to `SargassumBOMB`. 
+
+### Optional Arguments
+
+- `force_retry`: If true, notebook will be redownloaded.
+- `args`: Passed directly to `Pluto.run()`
 """
-function run(; force_retry::Bool = false)
+function run(; force_retry::Bool = false, args...)
     f = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
     DL_LINK = "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl"
     (!isfile(f) || force_retry) && download(DL_LINK, f)
-    Pluto.run(notebook = f)
+
+    defaults = (
+        notebook = f,
+    )
+
+    Pluto.run(; merge(defaults, args)...)
     return nothing 
 end
 
