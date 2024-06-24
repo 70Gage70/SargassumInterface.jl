@@ -279,7 +279,7 @@ let
 
 	- Tip! When adjusting sliders, click on them and use your arrow keys to make small changes. Try it: $(@bind test_slide PlutoUI.Slider(1:0.1:10, show_value = true))
 
-	- The main integration plot is displayed on the upper left of the screen. When parameters are changed (or when you start the interface for the first time) the plot is hidden. When you are done changing parameters, click `RUN` to recompute the plot.
+	- The main integration plot is displayed on the upper left of the screen. When parameters are changed the plot is hidden. When you are done changing parameters, click `RUN` to recompute the plot.
 
 	- After a plot is created, a new button will appear labeled `Inspect/export`. This will open up a much larger view of the plot along with some further parameters to edit and and interface allowing you to export the data.
 
@@ -1124,6 +1124,8 @@ end
 begin
 	@info "Calculating integration."
 
+	custom_itp_load;
+	
 	rp = RaftParameters(
 				ics = ics,
 				clumps = clumps,
@@ -1135,9 +1137,9 @@ begin
 			)
 	
 	@use_memo([trigger_calculation]) do
-		if trigger_calculation > 0
+		# if trigger_calculation > 0
 			global sol = simulate(rp, showprogress = false)
-		end
+		# end
 	end
 end
 
@@ -1145,51 +1147,51 @@ end
 let
 	@info "Defining main plot + small window."
 	
-	try
-		plot_type = plot_params[1]
-		
-		set_theme!(GEO_THEME())
-		global fig = Figure(
-			size = 2.0 .* (800, 400), 
-			fontsize = 20, 
-			figure_padding = (10, 70, 10, 20))
-		ax = Axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "")
-		if plot_type == "Trajectories"
-			trajectory!(ax, sol)
-		elseif plot_type == "Heat Map"
-			trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
-		end
-		SargassumColors.land!(ax)
-
-		@htl """<div style="
-		position: fixed; 
-		left: 1rem; 
-		top: 6rem; 
-		padding: 1px;
-		text-align: left;
-		z-index: 100;
-		max-width: 27%;
-		background-color: var(--main-bg-color);">
-		$(fig)
-		</div>"""
-	catch
-		global fig = nothing
-		
-		bad_fig = ad(md"""The plot has not been generated yet or the integration parameters have changed.""", "warning")
-
-		@htl """<div style="
-		position: fixed; 
-		left: 1rem; 
-		top: 6rem; 
-		padding: 1px;
-		text-align: left;
-		z-index: 100;
-		max-width: 27%;
-		background-color: var(--main-bg-color);">
-		$(bad_fig)
-		</div>"""
+try
+	plot_type = plot_params[1]
+	
+	set_theme!(GEO_THEME())
+	global fig = Figure(
+		size = 2.0 .* (800, 400), 
+		fontsize = 20, 
+		figure_padding = (10, 70, 10, 20))
+	ax = Axis(fig[1, 1], limits = (-100, -40, 0, 40), title = "")
+	if plot_type == "Trajectories"
+		trajectory!(ax, sol)
+	elseif plot_type == "Heat Map"
+		trajectory_hist!(ax, sol, SargassumFromAFAI.DIST_1718[(2018, 4)], 1, log_scale = true)
 	end
-end
+	SargassumColors.land!(ax)
+	
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	top: 6rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(fig)
+	</div>"""
+catch
+	global fig = nothing
+	
+	bad_fig = ad(md"""The integration parameters have changed.""", "warning")
+
+	@htl """<div style="
+	position: fixed; 
+	left: 1rem; 
+	top: 6rem; 
+	padding: 1px;
+	text-align: left;
+	z-index: 100;
+	max-width: 27%;
+	background-color: var(--main-bg-color);">
+	$(bad_fig)
+	</div>"""
+end # try
+end # let
 
 # ╔═╡ 76d7cff9-02ad-4841-8c50-dd3e50dcf1a4
 let
