@@ -357,7 +357,7 @@ PlutoHooks.@use_memo([water_load]) do
 			global water_custom = true
 			@info "Custom water interpolant loaded!"
 		catch
-			@info "Water itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WATER_ITP`".
+			@info "Water itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WATER_ITP`."
 			nothing
 		end
 	else
@@ -383,7 +383,7 @@ PlutoHooks.@use_memo([wind_load]) do
 			global wind_custom = true
 			@info "Custom wind interpolant loaded!"
 		catch
-			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WIND_ITP`".
+			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WIND_ITP`."
 			nothing
 		end
 	else
@@ -410,7 +410,7 @@ PlutoHooks.@use_memo([stokes_load]) do
 			global stokes_custom = true
 			@info "Custom Stokes interpolant loaded!"
 		catch
-			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `STOKES_ITP`".
+			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `STOKES_ITP`."
 			nothing
 		end
 	else
@@ -1418,7 +1418,7 @@ if itp_make_raw_file_type == ".mat"
 	nothing
 elseif itp_make_raw_file_type == ".nc"
 	itp_make_raw_file = pick_file(filterlist = "nc")
-	ncinfo(joinpath(@__DIR__, "..", "raw-data", "water.nc"))
+	ncinfo(itp_make_raw_file)
 	nothing
 else
 	itp_make_raw_file = ""
