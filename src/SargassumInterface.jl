@@ -25,9 +25,9 @@ function run(; force_retry::Bool = false, args...)
     return nothing 
 end
 
-function __init__()
-    @info "Use `SargassumInterface.run()` to start the interface."
-end
+# function __init__()
+#     @info "Use `SargassumInterface.run()` to start the interface."
+# end
 
 import PrecompileTools
 
