@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.42
+# v0.19.46
 
 using Markdown
 using InteractiveUtils
@@ -180,9 +180,9 @@ let
 	@info "Loading default interpolants"
 
 	try
-		itps_load(ITPS_DEFAULT_DIR)
+		itps_load(SargassumBOMB._ITPS_SCRATCH.x)
 	catch
-		itps_default_construct(download_data = true)
+		itps_default_construct(download = true)
 	end
 end
 
@@ -361,7 +361,7 @@ PlutoHooks.@use_memo([water_load]) do
 			nothing
 		end
 	else
-		WATER_PATH = joinpath(ITPS_DEFAULT_DIR, "WATER_ITP.jld2")
+		WATER_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WATER_ITP.jld2")
 		WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
 		nothing
 	end
@@ -387,7 +387,7 @@ PlutoHooks.@use_memo([wind_load]) do
 			nothing
 		end
 	else
-		WIND_PATH = joinpath(ITPS_DEFAULT_DIR, "WIND_ITP.jld2")
+		WIND_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WIND_ITP.jld2")
 		WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
 		nothing
 	end
@@ -414,7 +414,7 @@ PlutoHooks.@use_memo([stokes_load]) do
 			nothing
 		end
 	else
-		STOKES_PATH = joinpath(ITPS_DEFAULT_DIR, "STOKES_ITP.jld2")
+		STOKES_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "STOKES_ITP.jld2")
 		STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
 		nothing
 	end
