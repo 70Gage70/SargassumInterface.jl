@@ -1270,10 +1270,10 @@ let
 	ui_afai_plot(Child) = md"""
 	Show satellite data: $(sat(Child)) 
 	
-	|               |                   |               |                   |
-	|:-------------:|:-----------------:|:-------------:|:-----------------:|
-	| Date          | $(afyrmn(Child))  | Week          | $(wk(Child))  |
-	| Clouds        | $(clouds(Child))  | Scale         | $(scl(Child)) |
+	|         |                |               |               |
+	|:-------:|:--------------:|:-------------:|:-------------:|
+	| Date    |$(afyrmn(Child))| Week          | $(wk(Child))  |
+	| Clouds  |$(clouds(Child))| Scale         | $(scl(Child)) |
 	"""
 	afai_params = @bind afai_plot_params PlutoUI.combine() do Child
 		ad(ui_afai_plot(Child), "info")
@@ -1286,7 +1286,7 @@ let
 	padding: 1px;
 	text-align: left;
 	z-index: 98;
-	max-width: 24%;
+	max-width: 28%;
 	max-height: 20%;
 	background-color: var(--main-bg-color);">
 	$(afai_params)
@@ -1669,7 +1669,7 @@ blurb_lon_lat(Child) = md"""
 tname(Child) = Child(TextField(10, default = "time"))
 tstart1(Child) = Child(DatePicker())	
 tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
-tper(Child) = Child(Select([Day => "Day", "rdd" => "Rata Die Days", Hour => "Hour", Minute => "Minute", Second => "Second", Millisecond => "Millisecond"], default = "rdd"))
+tper(Child) = Child(Select([u"d" => "Day", "rdd" => "Rata Die Days", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "rdd"))
 	
 blurb_time(Child) = md"""
 | Name              | Start             | Period            |
@@ -1802,7 +1802,7 @@ if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_ma
 		
 	try
 		if t_period == "rdd" # Rata Die Days
-			add_temporal_dimension!(gf, infile, time_name, :t, DateTime(0000, 12, 31), Day, force = true)
+			add_temporal_dimension!(gf, infile, time_name, :t, DateTime(0000, 12, 31), u"d", force = true)
 		else
 			t_start = DateTime(t_start_day + t_start_time)
 			add_temporal_dimension!(gf, infile, time_name, :t, t_start, t_period, force = true)
