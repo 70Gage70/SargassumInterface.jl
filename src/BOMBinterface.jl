@@ -1029,10 +1029,10 @@ let
 	if ics_type == "Rectangle"
 		t1, t2 = tspan_data_rect .|> DateTime .|> datetime2time
 		tspan = (t1, t2)
-		cor = rect_params[1:4] 
+		cor = rect_params[1:4] # lon min, lat min, lon max, lat max
 		n_c_xy = rect_params[5:6]
-		x_range = range(cor[1], cor[2], length = n_c_xy[1])
-		y_range = range(cor[3], cor[4], length = n_c_xy[2])
+		x_range = range(cor[1], cor[3], length = n_c_xy[1])
+		y_range = range(cor[2], cor[4], length = n_c_xy[2])
 		global ics = InitialConditions(tspan, x_range, y_range, to_xy = true)
 	elseif ics_type == "AFAI"
 		y1, m1 = afai_params[1]
