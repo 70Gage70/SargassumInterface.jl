@@ -1,7 +1,7 @@
 name = "SargassumInterface"
 uuid = "30769374-9730-46b0-8d29-e3d67aca2e88"
 authors = ["Gage <gage.bonner@gmail.com>"]
-version = "0.7.11"
+version = "0.7.12"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -21,4 +21,18 @@ SargassumFromAFAI = "db9ac4ac-0b65-4026-8dbd-2bb7cf4c299a"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
+GLMakie = "0.10"
+HypertextLiteral = "0.9.5"
+JLD2 = "0.5"
+MAT = "0.10"
+NativeFileDialog = "0.2.1"
+NetCDF = "0.12"
+Pluto = "0.19.37"
+PlutoHooks = "0.0.5"
+PlutoUI = "0.7.50"
+PrecompileTools = "1.2.1"
+SargassumBOMB = "0.7.7"
+SargassumColors = "0.2.6"
+SargassumFromAFAI = "0.3.7"
+Unitful = "1.21"
 julia = "1.10"
