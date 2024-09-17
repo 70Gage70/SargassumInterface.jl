@@ -1,7 +1,7 @@
 name = "SargassumInterface"
 uuid = "30769374-9730-46b0-8d29-e3d67aca2e88"
 authors = ["Gage <gage.bonner@gmail.com>"]
-version = "0.7.12"
+version = "0.7.13"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -31,7 +31,7 @@ Pluto = "0.19.37"
 PlutoHooks = "0.0.5"
 PlutoUI = "0.7.50"
 PrecompileTools = "1.2.1"
-SargassumBOMB = "0.7.7"
+SargassumBOMB = "0.7.8"
 SargassumColors = "0.2.6"
 SargassumFromAFAI = "0.3.7"
 Unitful = "1.21"
