@@ -1,39 +1,43 @@
 module SargassumInterface
 
+using Scratch
+_INTERFACE_SCRATCH = Ref{String}()
+
 using Pluto
 
 """
-    run(; force_retry::Bool = false, args...)
+    run(; reset = false, args...)
 
-Start the interface to `SargassumBOMB`. 
+Start the interface. 
 
 ### Optional Arguments
 
-- `force_retry`: If true, notebook will be redownloaded.
-- `args`: Passed directly to `Pluto.run()`
+- `reset`: If true, the interface will be "factory reset" to its default state. This should only be required if the \
+interface code itself has been modified. That is, changing parameters using sliders etc. does not require a reset.
+- `args`: Passed directly to `Pluto.run()`. 
 """
-function run(; force_retry::Bool = false, args...)
-    f = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
-    DL_LINK = "https://raw.githubusercontent.com/70Gage70/SargassumInterface.jl/master/src/BOMBinterface.jl"
-    (!isfile(f) || force_retry) && download(DL_LINK, f)
+function run(; reset::Bool = false, args...)
+    nb = joinpath(_INTERFACE_SCRATCH.x, "interface.jl")
+    if reset
+        cp(joinpath(@__DIR__, "interface.jl"), nb, force = true)
+    end
 
     defaults = (
-        notebook = f,
+        notebook = nb,
     )
 
     Pluto.run(; merge(defaults, args)...)
     return nothing 
 end
 
-# function __init__()
-#     @info "Use `SargassumInterface.run()` to start the interface."
-# end
+function __init__()
+    _INTERFACE_SCRATCH.x = @get_scratch!("_INTERFACE_SCRATCH")
 
-import PrecompileTools
+    nb = joinpath(_INTERFACE_SCRATCH.x, "interface.jl")
 
-PrecompileTools.@compile_workload begin
-    f = joinpath(@__DIR__, "..", "interface", "BOMBinterface-editable.jl")
-    rm(f, force = true)
+    if !isfile(nb)
+        cp(joinpath(@__DIR__, "interface.jl"), nb)
+    end
 end
 
 end # module SargassumInterface

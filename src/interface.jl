@@ -17,8 +17,12 @@ end
 # ╔═╡ 589f251d-a2df-4879-9933-4deb95a8003a
 begin
     import Pkg
-    Pkg.activate(joinpath(@__DIR__, ".."))
-	Pkg.instantiate()
+    Pkg.activate(".")
+	Pkg.Registry.add("General")
+	Pkg.Registry.add(Pkg.RegistrySpec(url = "https://github.com/70Gage70/SargassumRegistry"))
+	Pkg.add([
+		"SargassumColors", "SargassumFromAFAI", "SargassumBOMB", "PlutoUI", "HypertextLiteral",
+		"NativeFileDialog", "PlutoHooks", "GLMakie", "Dates", "JLD2", "MAT", "NetCDF", "Unitful"])
 end
 
 # ╔═╡ d1565b62-ce6e-4e07-a041-f15e4fcc118b
