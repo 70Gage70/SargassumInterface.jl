@@ -5,8 +5,10 @@ _INTERFACE_SCRATCH = Ref{String}()
 
 using Pluto
 
+export interface
+
 """
-    run(; reset = false, args...)
+    interface(; reset = false, args...)
 
 Start the interface. 
 
@@ -16,7 +18,7 @@ Start the interface.
 interface code itself has been modified. That is, changing parameters using sliders etc. does not require a reset.
 - `args`: Passed directly to `Pluto.run()`. 
 """
-function run(; reset::Bool = false, args...)
+function interface(; reset::Bool = false, args...)
     nb = joinpath(_INTERFACE_SCRATCH.x, "interface.jl")
     if reset
         cp(joinpath(@__DIR__, "interface.jl"), nb, force = true)
