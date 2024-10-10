@@ -1436,7 +1436,7 @@ if itp_make_kind in ["WATER", "WIND", "STOKES"]
 	
 	$(blurb_time(Child))
 	
-	### Velocity field
+	### Field
 	
 	$(details("❓ HELP ❓", help_field_v))
 	
@@ -1831,7 +1831,7 @@ PlutoHooks.@use_memo([nutr_load]) do
 	
 		try
 			NUTRIENTS_ITP.x = load(NUTRIENTS_PATH, "NUTRIENTS_ITP")
-			@info "Custom Stokes interpolant loaded!"
+			@info "Custom nutrients interpolant loaded!"
 		catch
 			@info "Nutrients itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `NUTRIENTS_ITP`."
 			NUTRIENTS_ITP.x = DUMMY_ITP
