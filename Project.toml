@@ -1,7 +1,7 @@
 name = "SargassumInterface"
 uuid = "30769374-9730-46b0-8d29-e3d67aca2e88"
 authors = ["Gage <gage.bonner@gmail.com>"]
-version = "0.7.13"
+version = "0.7.14"
 
 [deps]
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"

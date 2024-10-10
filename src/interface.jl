@@ -96,14 +96,6 @@ md"""
 ---
 """
 
-# ╔═╡ 4fddac82-52f3-464f-874f-056e8f165ba0
-# Spacer
-md"""
-\
-\
-\
-"""
-
 # ╔═╡ d512eee1-890c-40ce-ab0e-54d1004ad5d2
 # Spacer
 md"""
@@ -275,11 +267,11 @@ ad(text, kind) = Markdown.MD(Markdown.Admonition(kind, "", [text]))
 # ╔═╡ b503b1ff-18b5-46b9-9809-88b54240a762
 let
 	tutorial = md"""
-	This is the interface to the [SargassumBOMB.jl](https://github.com/70Gage70/SargassumBOMB.jl) package and companion packages.
+	This is the interface to the [Sargassum.jl](https://github.com/70Gage70/Sargassum.jl) package and companion packages.
 
 	- The interface will look best in fullscreen mode.
 	
-	- All of the integration parameters - including the ability to create and load your own interpolants - are set in this column. Scroll down to see them all, and click the [❓ HELP ❓] boxes for further explanation.
+	- All of the integration parameters - including the ability to create and load your own interpolants - are set in this column. Scroll down to see them all, and click the [❓HELP❓] boxes for further explanation.
 
 	- Tip! When adjusting sliders, click on them and use your arrow keys to make small changes. Try it: $(@bind test_slide PlutoUI.Slider(1:0.1:10, show_value = true))
 
@@ -306,7 +298,7 @@ let
 	"""
 
 	blurb = md"""
-	# SargassumBOMB Interface
+	# Sargassum.jl Interface
 	$(details("💡 Click me for tutorial! 💡", tutorial))
 	$(details("🛠️ Troubleshooting 🛠️", troubleshooting))
 	$(details("⚙️ Advanced Usage ⚙️", advanced))
@@ -320,23 +312,27 @@ let
 	itp_loader_help = md"""
 	- Here you can load any custom interpolants you have created. Check the box of the associated interpolant you would like to load. Uncheck the box to return to the default interpolants.
 
-	- This will open up a prompt for you to pick a file. Interpolants are stored in the `.jld2` file format.
+	- This will open up a prompt for you to pick a file. Interpolants are stored in the `.jld2` file format. *Don't see a prompt?* It might not have been brought to the front of the screen if you're viewing the interface in fullscreen mode.
 
-	- To make your own interpolants, see the next section of the interface.
+	- To *make* your own interpolants, see the next section of the interface.
+
+	- Refer to the help section of "Current active interpolants" above for further information on the meaning of each interpolant.
 	"""
 	
-	water(Child) = Child(CheckBox(default = false))
-	wind(Child) = Child(CheckBox(default = false))
-	stokes(Child) = Child(CheckBox(default = false))
+	wtr(Child) = Child(CheckBox(default = false))
+	wnd(Child) = Child(CheckBox(default = false))
+	stk(Child) = Child(CheckBox(default = false))
+	tmp(Child) = Child(CheckBox(default = false))
+	nut(Child) = Child(CheckBox(default = false))
 		
-	ui_itp_loader(Child) = md"""
+	ui_itp_loader(Ch) = md"""
 	### Load custom interpolants
 
 	$(details("❓ HELP ❓", itp_loader_help))
 	
-	| Water             | Wind              | Stokes           |
-	|:-----------------:|:-----------------:|:----------------:|
-	| $(water(Child))   | $(wind(Child))    | $(stokes(Child)) |
+	| Water      | Wind       | Stokes     | Temperature | Nutrients   |
+	|:----------:|:----------:|:----------:|:-----------:|:-----------:|
+	| $(wtr(Ch)) | $(wnd(Ch)) | $(stk(Ch)) | $(tmp(Ch))  | $(nut(Ch))  |
 	"""
 
 	@bind custom_itp_load PlutoUI.combine() do Child
@@ -344,88 +340,38 @@ let
 	end
 end
 
+# ╔═╡ 7f2022c7-a510-46a5-9090-84f58693815c
+let
+	custom_itp_load;
+	
+	help_blurb = md"""
+	This box allows you inspect the details of the active interpolants "at-a-glance." Refer to this to ensure that your integration ranges fall within these limits. The following interpolants are active:
+
+	- `Water Velocity`: The ocean velocity.
+	- `Wind Velocity`: The wind velocity.
+	- `Stokes Drift`: The Stokes drift velocity.
+	- `Temperature`: The ocean temperature.
+	- `Nutrients`: The nutrient content of the ocean. Currently, only nitrogen content is used.
+
+	When you load custom interpolants, the inspection window will close automatically if it is already open, since the limits may change. Re-open it to see the new limits.
+	"""
+
+	toggle(Child) = Child(CheckBox(default = false))
+
+	final_blurb = md"""
+	## Current active interpolants
+
+	$(details("❓ HELP ❓", help_blurb))
+
+	**Inspect interpolants**: $(@bind check_limits CheckBox(default = false))
+	
+	"""
+
+	ad(final_blurb, "tip")
+end
+
 # ╔═╡ c6cf756a-1c17-44bc-8655-b2d674888971
-water_load, wind_load, stokes_load = custom_itp_load;
-
-# ╔═╡ 45d67f51-53d1-4d07-8022-168a44408705
-begin
-
-water_custom = false
-
-PlutoHooks.@use_memo([water_load]) do
-	if water_load
-		WATER_PATH = pick_file(filterlist = "jld2")
-	
-		try
-			WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
-			global water_custom = true
-			@info "Custom water interpolant loaded!"
-		catch
-			@info "Water itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WATER_ITP`."
-			nothing
-		end
-	else
-		WATER_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WATER_ITP.jld2")
-		WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
-		nothing
-	end
-end
-
-end
-
-# ╔═╡ 0afdbfc4-3feb-4e65-a3f2-b6c200aad068
-begin
-
-wind_custom = false
-
-PlutoHooks.@use_memo([wind_load]) do
-	if wind_load
-		WIND_PATH = pick_file(filterlist = "jld2")
-	
-		try
-			WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
-			global wind_custom = true
-			@info "Custom wind interpolant loaded!"
-		catch
-			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WIND_ITP`."
-			nothing
-		end
-	else
-		WIND_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WIND_ITP.jld2")
-		WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
-		nothing
-	end
-
-end
-
-end
-
-# ╔═╡ 7ba608cd-5217-4eb1-a4d8-f0279934ad5c
-begin
-
-stokes_custom = false
-
-PlutoHooks.@use_memo([stokes_load]) do
-	if stokes_load
-		STOKES_PATH = pick_file(filterlist = "jld2")
-	
-		try
-			STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
-			global stokes_custom = true
-			@info "Custom Stokes interpolant loaded!"
-		catch
-			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `STOKES_ITP`."
-			nothing
-		end
-	else
-		STOKES_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "STOKES_ITP.jld2")
-		STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
-		nothing
-	end
-
-end
-
-end
+water_load, wind_load, stokes_load, temp_load, nutr_load = custom_itp_load; # toggling one load checkbox won't trigger the others
 
 # ╔═╡ cb2ae3f7-ee48-43e3-8a98-e89977440305
 let
@@ -435,6 +381,10 @@ let
 	- Your data must be stored in either a `.nc` or `.mat` format. When you choose the appropriate format, a prompt will open and you may select your file.
 
 	- The interface will expand with further instructions.
+
+	- After you have created your interpolant, you can load it with the "Load custom interpolants" block above.
+
+	- Reset this part of the interface by setting the file type to be blank.
 	"""
 	
 	blurb = md"""
@@ -444,7 +394,7 @@ let
 	
 	| Interpolant kind | File type | 
 	|:--:|:--:|
-	| $(@bind itp_make_kind Select(["WATER", "WIND", "STOKES"], default = "WATER")) | $(@bind itp_make_raw_file_type Select(["", ".nc", ".mat"], default = "")) |
+	| $(@bind itp_make_kind Select(["WATER", "WIND", "STOKES", "TEMPERATURE", "NUTRIENTS"], default = "WATER")) | $(@bind itp_make_raw_file_type Select(["", ".nc", ".mat"], default = "")) |
 	"""
 		
 	ad(blurb, "info")
@@ -455,7 +405,7 @@ begin
 	local blurb = md"""
 	These settings control the initial locations of clumps. One of two types of initial position distributions can be chosen.
 	
-	- `"Rectangle"`: Clumps are initialized in a rectangle inside the defined latitude/longitude box with `N clumps x` in the x direction and `N clumps y` in the y direction.
+	- `"Rectangle"`: Clumps are initialized in a rectangle inside the defined latitude/longitude box with `N clumps x` in the ``x`` direction and `N clumps y` in the ``y`` direction. The integration takes place between the indicated initial and final times.
 	
 	- `"AFAI"`: Clumps are initialized according to the Sargassum distribution at the indicated date and week. `Levels` is related to the total number of clumps; the higher it is, the closer the initialized distribution is to the actual distribution. The integration starts at the indicated date and week and proceeds for the number of selected weeks.
 	"""
@@ -706,7 +656,7 @@ begin
 	- ``S_{\text{min}}``: The threshold for clump death. Smaller values of ``S_{\text{min}}`` makes it harder for clumps to die.
 	- ``S_{\text{max}}``: The threshold for clump growth. Larger values of ``S_{\text{max}}`` makes it harder for clumps to grow.
 	- ``C_{\text{min}}`` the number of clumps will not die below this value multiplied by the initial number of clumps. If ``C_{\text{min}} = 0``, then the integration may stop early if all clumps die.
-	- ``C_{\text{min}}`` the number of clumps will not grow above this value multiplied by the initial number of clumps.
+	- ``C_{\text{max}}`` the number of clumps will not grow above this value multiplied by the initial number of clumps.
 	"""
 	ad(
 		md""" 
@@ -741,8 +691,8 @@ let
 	ui_gd_params(Child) = md"""
 	| Parameter             | Units                            | Value           | 
 	|:---------------------:|:--------------------------------:|:---------------:|
-	| ``\mu_{\text{max}}``  |``\times 10^{-2} \, \text{d}``  |$(mu(Child)) |
-	| ``m``                 |``\times 10^{-2} \, \text{d}``  |$(m(Child)) |
+	| ``\mu_{\text{max}}``  |``\times 10^{-2} \, \text{d}^{-1}``  |$(mu(Child)) |
+	| ``m``                 |``\times 10^{-2} \, \text{d}^{-1}``  |$(m(Child)) |
 	| ``k_{\text{N}}``      |``\times 10^{-4} \, \text{mmol/m}^3``|$(kN(Child)) |
 	| ``T_{\text{min}}``    | ``\degree \text{C}``            | $(Tmn(Child)) |
 	| ``T_{\text{max}}``    | ``\degree \text{C}``            | $(Tmx(Child)) |
@@ -1339,50 +1289,6 @@ function get_limits(itp)
 	return (lon[1], lon[2], lat[1], lat[2], tmin, tmax)
 end
 
-# ╔═╡ 0c7b91e9-3b9b-4f71-a472-fa88df92d4b0
-function get_limits_blurb(itp, custom::Bool, title::String)
-	lonmin, lonmax, latmin, latmax, tmin, tmax = get_limits(itp)
-
-	kind = !custom ? HTML("""<span style="color:yellow"><b>default</b></span>""") : HTML("""<span style="color:yellow"><b>custom</b></span>""")
-	
-	return md"""
-	### $(title)
-	
-	Using **$(kind)** interpolant with limits:
-	
-	|             |            |             |           |       |         |
-	|-------------|------------|-------------|-----------|-------|---------|
-	| Lon min (°) | $(lonmin)  | Lat min (°) | $(latmin) | T min | $(tmin) | 
-	| Lon max (°) | $(lonmax)  | Lat max (°) | $(latmax) | T max | $(tmax) |
-	"""
-end
-
-# ╔═╡ 7f2022c7-a510-46a5-9090-84f58693815c
-let
-	help_blurb = md"""
-	This box shows you details of the active interpolants "at-a-glance". Refer to this to ensure that your integration ranges fall within these limits.
-	"""
-	water_blurb = get_limits_blurb(WATER_ITP, water_custom, "Water velocity")
-	wind_blurb = get_limits_blurb(WIND_ITP, wind_custom, "Wind velocity")
-	stokes_blurb = get_limits_blurb(WIND_ITP, stokes_custom, "Stokes drift")
-
-	### FINAL
-
-	final_blurb = md"""
-	## Current active interpolants
-
-	$(details("❓ HELP ❓", help_blurb))
-	
-	$(water_blurb)
-
-	$(wind_blurb)
-
-	$(stokes_blurb)
-	"""
-
-	ad(final_blurb, "tip")
-end
-
 # ╔═╡ cbade461-3782-428c-9f3f-218646adfb4b
 function clean_matdict(dict)
 	labels = collect(keys(dict))
@@ -1418,11 +1324,13 @@ end
 # ╔═╡ 7430330c-7bc1-4404-997b-9f2ea1967a41
 ### SELECT FILE TO LOAD
 if itp_make_raw_file_type == ".mat"
+	@info "A .mat file picker dialog has been opened (possibly behind this interface)."
 	itp_make_raw_file = pick_file(filterlist = "mat")
 	matdict = clean_matdict(matread(itp_make_raw_file))
 	matinfo(itp_make_raw_file, matdict)
 	nothing
 elseif itp_make_raw_file_type == ".nc"
+	@info "A .nc file picker dialog has been opened (possibly behind this interface)."
 	itp_make_raw_file = pick_file(filterlist = "nc")
 	ncinfo(itp_make_raw_file)
 	nothing
@@ -1432,9 +1340,9 @@ else
 end
 
 # ╔═╡ 13064d2c-b96a-4c93-bcd9-35264ab55cc5
-### NETCDF FILE DATA ENTRY
+### DATA ENTRY
 let
-if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== ""
+if itp_make_raw_file_type in [".nc", ".mat"] && itp_make_raw_file !== ""
 
 ### LON LAT	
 lonname(Child) = Child(TextField(default = "lon"))
@@ -1452,47 +1360,22 @@ blurb_lon_lat(Child) = md"""
 |Reference          |$(lonref(Child))   |$(latref(Child))   |
 """
 
+help_lonlat = md"""
+- `Name`: The name of the lon/lat variables in your file.
+- `Units`: The units of the lon/lat variables in your file. 
+- `Reference`: If you selected non-degree units, you must provide the reference longitude and latitude so that they may be converted to spherical coordinates. Enter in the actual values, not their names.
+"""
+	
 ### TIME
 tname(Child) = Child(TextField(10, default = "time"))
 tstart1(Child) = Child(DatePicker())	
 tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
-tper(Child) = Child(Select([Day => "Day", "rdd" => "Rata Die Days", Hour => "Hour", Minute => "Minute", Second => "Second", Millisecond => "Millisecond"], default = "rdd"))
+tper(Child) = Child(Select([u"d" => "Day", "rdd" => "Rata Die Days", u"h" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
 	
 blurb_time(Child) = md"""
 | Name              | Start             | Period            |
 |:-----------------:|:-----------------:|:-----------------:|
 |$(tname(Child))    |$(tstart1(Child)) $(tstart2(Child))  |$(tper(Child))  |
-"""
-
-### FIELD
-uxname(Child) = Child(TextField(default = "u"))
-uyname(Child) = Child(TextField(default = "v"))
-vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
-vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
-	
-frem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
-ford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
-fscn(Child) = Child(TextField(default = "scale_factor"))
-foff(Child) = Child(TextField(default = "add_offset"))
-fmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
-
-blurb_field(Child) = md"""
-|    			    |    				|
-|:-----------------:|:-----------------:|
-|``\hat{x}`` name  	|$(uxname(Child))  	|
-|``\hat{y}`` name  	|$(uyname(Child))  	|
-|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
-|Depth axis   		|$(frem(Child))  	|
-|Dim. Order   	    |$(ford(Child))     |
-|Scale factor name  |$(fscn(Child))     |
-|Offset factor name |$(foff(Child))     |
-|Missings name(s)   |$(fmis(Child))     |
-"""
-
-help_lonlat = md"""
-- `Name`: The name of the lon/lat variables in your file.
-- `Units`: The units of the lon/lat variables in your file. 
-- `Reference`: If you selected non-degree units, you must provide the reference longitude and latitude so that they may be converted to spherical coordinates. Enter in the actual values, not their names.
 """
 
 help_time = md"""
@@ -1501,272 +1384,218 @@ help_time = md"""
 - `Period`: This quantity is `X` as defined above.
 - Tip: You do not need to set the `Start` for `Rata Die Days` since it is computed automatically.
 """
-
-help_field = md"""
-- ``\hat{x}`` name: The name of the ``x`` component of the velocity in your file.
-- ``\hat{y}`` name: The name of the ``y`` component of the velocity in your file.
-- `Field units`: The units of the velocity in your file.
-- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
-- `Dim. order`: Enter the dimension order of the velocities.
-- `Scale factor`: Enter the name of the scale factor (if none is found by the given name, it is taken to be ``1``).
-- `Offset factor`: Enter the name of the offset factor (if none is found by the given name, it is taken to be ``0``).
-- `Missings factor`: Enter the name of the attribute(s) that define the value of missing or `NaN` data.
-"""
 	
-ui_itp_maker(Child) = md"""
-### Longitude and latitude
-
-$(details("❓ HELP ❓", help_lonlat))
-
-$(blurb_lon_lat(Child))
-
-### Time
-
-$(details("❓ HELP ❓", help_time))
-
-$(blurb_time(Child))
-
-### Velocity field
-
-$(details("❓ HELP ❓", help_field))
-
-$(blurb_field(Child))
-
-### Generate and export: $(Child(CheckBox(default = false)))
-"""
+######### FIELD
+### WATER, WIND, STOKES
+if itp_make_kind in ["WATER", "WIND", "STOKES"]
+	uxname(Child) = Child(TextField(default = "u"))
+	uyname(Child) = Child(TextField(default = "v"))
+	vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
+	vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
+		
+	vfrem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
+	vford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
+	vfscn(Child) = Child(TextField(default = "scale_factor"))
+	vfoff(Child) = Child(TextField(default = "add_offset"))
+	vfmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
 	
-@bind custom_itp_make_nc PlutoUI.combine() do Child
-		ad(ui_itp_maker(Child), "info")
+	blurb_field_v(Child) = md"""
+	|    			    |    				|
+	|:-----------------:|:-----------------:|
+	|``\hat{x}`` name  	|$(uxname(Child))  	|
+	|``\hat{y}`` name  	|$(uyname(Child))  	|
+	|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
+	|Depth axis   		|$(vfrem(Child))  	|
+	|Dim. Order   	    |$(vford(Child))     |
+	|Scale factor name  |$(vfscn(Child))     |
+	|Offset factor name |$(vfoff(Child))     |
+	|Missings name(s)   |$(vfmis(Child))     |
+	"""
+	
+	help_field_v = md"""
+	- ``\hat{x}`` name: The name of the ``x`` component of the velocity in your file.
+	- ``\hat{y}`` name: The name of the ``y`` component of the velocity in your file.
+	- `Field units`: The units of the velocity in your file.
+	- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
+	- `Dim. order`: Enter the dimension order of the velocities.
+	- `Scale factor`: Enter the name of the scale factor (if none is found by the given name, it is taken to be ``1``).
+	- `Offset factor`: Enter the name of the offset factor (if none is found by the given name, it is taken to be ``0``).
+	- `Missings factor`: Enter the name of the attribute(s) that define the value of missing or `NaN` data.
+	"""
+
+	ui_itp_maker_v(Child) = md"""
+	### Longitude and latitude
+	
+	$(details("❓ HELP ❓", help_lonlat))
+	
+	$(blurb_lon_lat(Child))
+	
+	### Time
+	
+	$(details("❓ HELP ❓", help_time))
+	
+	$(blurb_time(Child))
+	
+	### Velocity field
+	
+	$(details("❓ HELP ❓", help_field_v))
+	
+	$(blurb_field_v(Child))
+	
+	### Generate and export: $(Child(CheckBox(default = false)))
+	"""
+		
+	@bind custom_itp_make PlutoUI.combine() do Child
+		ad(ui_itp_maker_v(Child), "info")
 	end
+	
+### TEMPERATURE
+elseif itp_make_kind == "TEMPERATURE"
+	Tname(Child) = Child(TextField(default = "temp"))
+	Tunits(Child) = Child(Select([u"°C" => "°C", u"°F" => "°F"], default = "°C"))
+		
+	Tfrem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
+	Tford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
+	Tfscn(Child) = Child(TextField(default = "scale_factor"))
+	Tfoff(Child) = Child(TextField(default = "add_offset"))
+	Tfmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
+	
+	blurb_field_T(Child) = md"""
+	|    			    |    				|
+	|:-----------------:|:-----------------:|
+	|``T`` name  	    |$(Tname(Child))  	|
+	|Field units  		|$(Tunits(Child))    |
+	|Depth axis   		|$(Tfrem(Child))  	|
+	|Dim. Order   	    |$(Tford(Child))     |
+	|Scale factor name  |$(Tfscn(Child))     |
+	|Offset factor name |$(Tfoff(Child))     |
+	|Missings name(s)   |$(Tfmis(Child))     |
+	"""
+	
+	help_field_T = md"""
+	- ``T`` name: The name of the temperature variable in your file.
+	- `Field units`: The units of the temperature in your file.
+	- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
+	- `Dim. order`: Enter the dimension order of the velocities.
+	- `Scale factor`: Enter the name of the scale factor (if none is found by the given name, it is taken to be ``1``).
+	- `Offset factor`: Enter the name of the offset factor (if none is found by the given name, it is taken to be ``0``).
+	- `Missings factor`: Enter the name of the attribute(s) that define the value of missing or `NaN` data.
+	"""
 
-else
-	nothing
-end
-end
+	ui_itp_maker_T(Child) = md"""
+	### Longitude and latitude
+	
+	$(details("❓ HELP ❓", help_lonlat))
+	
+	$(blurb_lon_lat(Child))
+	
+	### Time
+	
+	$(details("❓ HELP ❓", help_time))
+	
+	$(blurb_time(Child))
+	
+	### Velocity field
+	
+	$(details("❓ HELP ❓", help_field_T))
+	
+	$(blurb_field_T(Child))
+	
+	### Generate and export: $(Child(CheckBox(default = false)))
+	"""
+		
+	@bind custom_itp_make PlutoUI.combine() do Child
+		ad(ui_itp_maker_T(Child), "info")
+	end
+	
+### NUTRIENTS
+elseif itp_make_kind == "NUTRIENTS"
+	Nname(Child) = Child(TextField(default = "no3"))
+	N_num(Child) = Child(Select([u"mmol" => "mmol", u"mol" => "mol"], default = "mmol"))
+	N_den(Child) = Child(Select([u"m^3" => "Cubic meter", u"km^3" => "Cubic kilometer", u"L" => "Liter"], default = "Cubic meter"))
+		
+	Nfrem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
+	Nford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
+	Nfscn(Child) = Child(TextField(default = "scale_factor"))
+	Nfoff(Child) = Child(TextField(default = "add_offset"))
+	Nfmis(Child) = Child(TextField(default = "_FillValue, missing_value"))
+	
+	blurb_field_N(Child) = md"""
+	|    			    |    				|
+	|:-----------------:|:-----------------:|
+	|``N`` name  	    |$(Nname(Child))  	|
+	|Field units  		|$(N_num(Child)) per  $(N_den(Child)) 	|
+	|Depth axis   		|$(Nfrem(Child))  	|
+	|Dim. Order   	    |$(Nford(Child))     |
+	|Scale factor name  |$(Nfscn(Child))     |
+	|Offset factor name |$(Nfoff(Child))     |
+	|Missings name(s)   |$(Nfmis(Child))     |
+	"""
+	
+	help_field_N = md"""
+	- ``N`` name: The name of the nitrogen concentration variable in your file.
+	- `Field units`: The units of the nitrogen concentration in your file.
+	- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
+	- `Dim. order`: Enter the dimension order of the velocities.
+	- `Scale factor`: Enter the name of the scale factor (if none is found by the given name, it is taken to be ``1``).
+	- `Offset factor`: Enter the name of the offset factor (if none is found by the given name, it is taken to be ``0``).
+	- `Missings factor`: Enter the name of the attribute(s) that define the value of missing or `NaN` data.
+	"""
+
+	ui_itp_maker_N(Child) = md"""
+	### Longitude and latitude
+	
+	$(details("❓ HELP ❓", help_lonlat))
+	
+	$(blurb_lon_lat(Child))
+	
+	### Time
+	
+	$(details("❓ HELP ❓", help_time))
+	
+	$(blurb_time(Child))
+	
+	### Velocity field
+	
+	$(details("❓ HELP ❓", help_field_N))
+	
+	$(blurb_field_N(Child))
+	
+	### Generate and export: $(Child(CheckBox(default = false)))
+	"""
+		
+	@bind custom_itp_make PlutoUI.combine() do Child
+		ad(ui_itp_maker_N(Child), "info")
+	end
+end # if for itp type
+end # if for evaluating this cell
+end # let
 
 # ╔═╡ c52db42a-97ab-4364-ac58-704baa7aac36
-### NETCDF FILE GENERATE AND EXPORT
-let
-if itp_make_raw_file_type == ".nc" && itp_make_raw_file !== "" && custom_itp_make_nc[20]
-	@info "Generating interpolant..."
-
-	infile = itp_make_raw_file
-	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make_nc[1:6]
-	time_name, t_start_day, t_start_time, t_period = custom_itp_make_nc[7:10]
-	u_name, v_name, vel_num, vel_den = custom_itp_make_nc[11:14]
-	remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make_nc[15:19]
-
-	####################
-	gf = GriddedField(3)
-
-	try
-		if !(lon_units in [u"°", u"alon"]) # have to transform to eqr
-			try 
-				lon0 = parse(Float64, lon0)
-				lat0 = parse(Float64, lat0)
-			catch e
-				@info "Could not parse reference lon/lat as numbers. $(e)"
-			end
-				
-			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
-				units = lon_units)
-			add_spatial_dimension!(gf, infile, lon_name, :lon, u"°", "degrees", 
-				transform = x -> xy2sph(x, 0.0, eqr = eqr)[1], force = true)
-		else
-			add_spatial_dimension!(gf, infile, lon_name, :lon, lon_units, "degrees", force = true)
-		end
-	
-		if !(lat_units in [u"°", u"alat"]) # have to transform to eqr
-			try 
-				lon0 = parse(Float64, lon0)
-				lat0 = parse(Float64, lat0)
-			catch e
-				@info "Could not parse reference lon/lat as numbers. $(e)"
-			end
-			
-			eqr = EquirectangularReference(lon0 = lon0, lat0 = lat0, 
-				units = lat_units)
-			add_spatial_dimension!(gf, infile, lat_name, :lat, u"°", "degrees", 
-				transform = y -> xy2sph(0.0, y, eqr = eqr)[2], force = true)
-		else
-			add_spatial_dimension!(gf, infile, lat_name, :lat, lon_units, "degrees", force = true)
-		end
-
-	catch e
-		@info "Could not add latitude/longitude variables. $(e)"
-	end
-		
-	try
-		if t_period == "rdd" # Rata Die Days
-			add_temporal_dimension!(gf, infile, time_name, :t, DateTime(0000, 12, 31), Day, force = true)
-		else
-			t_start = DateTime(t_start_day + t_start_time)
-			add_temporal_dimension!(gf, infile, time_name, :t, t_start, t_period, force = true)
-		end
-	catch e
-		@info "Could not add time variable. $(e)"
-	end
-
-	try
-		take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
-		vel_units = vel_num/vel_den
-		missings_name_parsed = String.(split(missings_name, ","))
-		add_field!(gf, infile, u_name, :u, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
-		add_field!(gf, infile, v_name, :v, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
-	catch e
-		@info "Could not add velocity variables. $(e)"
-	end
-	
-	ranges_increasing!(gf)
-	sph2xy!(gf)
-	
-	itp_make = InterpolatedField(gf)
-	add_derivatives!(itp_make)
-
-	@info "Interpolant generated."
-
-	itp_make_export_path = save_file()
-	outfile = itp_make_export_path * ".jld2"
-
-	try
-		if itp_make_kind == "WATER"
-			jldsave(outfile, WATER_ITP = itp_make)
-		elseif itp_make_kind == "WIND"
-			jldsave(outfile, WIND_ITP = itp_make)
-		elseif itp_make_kind == "STOKES"
-			jldsave(outfile, STOKES_ITP = itp_make)
-		end
-
-		@info "Custom interpolant created at $(outfile)"
-		@info "Reset the interpolant file type to clear or start over."
-	catch
-		@info "Custom interpolant could not be exported."
-	end
-	
-end
-end
-
-# ╔═╡ bccf3ca7-d548-4757-aceb-c86deed47fdb
-### MAT FILE DATA ENTRY
-let
-if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== ""
-
-### LON LAT	
-lonname(Child) = Child(TextField(default = "lon"))
-latname(Child) = Child(TextField(default = "lat"))
-ulnname(Child) = Child(Select([u"°" => "(-180°, 180°)", u"alon" => "(0°, 360°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-180°, 180°)"))
-ultname(Child) = Child(Select([u"°" => "(-90°, 90°)", u"alat" => "(0°, 180°)", u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "(-90°, 90°)"))
-lonref(Child) = Child(TextField(default = ""))
-latref(Child) = Child(TextField(default = ""))
-	
-blurb_lon_lat(Child) = md"""
-|                   | Longitude         | Latitude          |
-|:-----------------:|:-----------------:|:-----------------:|
-|Name               |$(lonname(Child))  |$(latname(Child))  |
-|Units              |$(ulnname(Child))  |$(ultname(Child))  |
-|Reference          |$(lonref(Child))   |$(latref(Child))   |
-"""
-
-### TIME
-tname(Child) = Child(TextField(10, default = "time"))
-tstart1(Child) = Child(DatePicker())	
-tstart2(Child) = Child(TimePicker(default = Dates.Time(0,0,0), show_seconds = true))	
-tper(Child) = Child(Select([u"d" => "Day", "rdd" => "Rata Die Days", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "rdd"))
-	
-blurb_time(Child) = md"""
-| Name              | Start             | Period            |
-|:-----------------:|:-----------------:|:-----------------:|
-|$(tname(Child))    |$(tstart1(Child)) $(tstart2(Child))  |$(tper(Child))  |
-"""
-
-### FIELD
-uxname(Child) = Child(TextField(default = "u"))
-uyname(Child) = Child(TextField(default = "v"))
-vu_num(Child) = Child(Select([u"km" => "Kilometers", u"m" => "Meters", u"mi" => "Miles", u"naumi" => "Nautical Miles"], default = "Kilometers"))
-vu_den(Child) = Child(Select([u"d" => "Day", u"hr" => "Hour", u"minute" => "Minute", u"s" => "Second", u"ms" => "Millisecond"], default = "Day"))
-	
-frem(Child) = Child(Select(["", 1, 2, 3, 4], default = ""))
-ford(Child) = Child(Select([(1, 2, 3) => "(x, y, t)", (2, 1, 3) => "(y, x, t)", (3, 1, 2) => "(t, x, y)", (3, 2, 1) => "(t, y, x)"], default = "(x, y, t)"))
-
-blurb_field(Child) = md"""
-|    			    |    				|
-|:-----------------:|:-----------------:|
-|``\hat{x}`` name  	|$(uxname(Child))  	|
-|``\hat{y}`` name  	|$(uyname(Child))  	|
-|Field units  		|$(vu_num(Child)) per  $(vu_den(Child)) 	|
-|Depth axis   		|$(frem(Child))  	|
-|Dim. Order   	    |$(ford(Child))     |
-"""
-
-help_lonlat = md"""
-- `Name`: The name of the lon/lat variables in your file.
-- `Units`: The units of the lon/lat variables in your file. 
-- `Reference`: If you selected non-degree units, you must provide the reference longitude and latitude so that they may be converted to spherical coordinates. Enter in the actual values, not their names.
-"""
-
-help_time = md"""
-- `Name`: The name of the time variable in your file.
-- `Start`: The value of the time variable will be of the form `X since Y`, e.g. `seconds since January 1, 1970`. This quantity is `Y`.
-- `Period`: This quantity is `X` as defined above.
-- Tip: You do not need to set the `Start` for `Rata Die Days` since it is computed automatically.
-"""
-
-help_field = md"""
-- ``\hat{x}`` name: The name of the ``x`` component of the velocity in your file.
-- ``\hat{y}`` name: The name of the ``y`` component of the velocity in your file.
-- `Field units`: The units of the velocity in your file.
-- `Depth axis`: In the case that you have a four dimensional field, select the axis to be removed (by default, the resulting interpolant will be indexed on the first entry of this axis).
-- `Dim. order`: Enter the dimension order of the velocities.
-"""
-	
-ui_itp_maker(Child) = md"""
-### Longitude and latitude
-
-$(details("❓ HELP ❓", help_lonlat))
-
-$(blurb_lon_lat(Child))
-
-### Time
-
-$(details("❓ HELP ❓", help_time))
-
-$(blurb_time(Child))
-
-### Velocity field
-
-$(details("❓ HELP ❓", help_field))
-
-$(blurb_field(Child))
-
-### Generate and export: $(Child(CheckBox(default = false)))
-"""
-	
-@bind custom_itp_make_mat PlutoUI.combine() do Child
-		ad(ui_itp_maker(Child), "info")
-	end
-
-else
-	nothing
-end
-end
-
-# ╔═╡ 03a6fa8e-4b8c-42f6-ad56-b10f0cd6f0eb
 ### FILE GENERATE AND EXPORT
 let
-if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_make_mat[17]
-	@info "Generating interpolant..."
+if itp_make_raw_file_type in [".nc", ".mat"] && itp_make_raw_file !== "" && custom_itp_make[end]
+	@info "Generating interpolant. This may take several seconds."
 
 	infile = itp_make_raw_file
-	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make_mat[1:6]
-	time_name, t_start_day, t_start_time, t_period = custom_itp_make_mat[7:10]
-	u_name, v_name, vel_num, vel_den = custom_itp_make_mat[11:14]
-	remove_axes, permutation, = custom_itp_make_mat[15:16]
-		
+	lon_name, lat_name, lon_units, lat_units, lon0, lat0 = custom_itp_make[1:6]
+	time_name, t_start_day, t_start_time, t_period = custom_itp_make[7:10]
+	
+	if itp_make_kind in ["WATER", "WIND", "STOKES"]
+		u_name, v_name, vel_num, vel_den = custom_itp_make[11:14]
+		remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make[15:19]
+	elseif itp_make_kind == "TEMPERATURE"
+		T_name, T_units = custom_itp_make[11:12]
+		remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make[13:17]
+	elseif itp_make_kind == "NUTRIENTS"
+		N_name, N_units_num, N_units_den = custom_itp_make[11:13]
+		remove_axes, permutation, scale_factor_name, add_offset_name, missings_name = custom_itp_make[14:18]
+	end
+
 	####################
 	gf = GriddedField(3)
 
+	### LAT/LON
 	try
 		if !(lon_units in [u"°", u"alon"]) # have to transform to eqr
 			try 
@@ -1803,7 +1632,8 @@ if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_ma
 	catch e
 		@info "Could not add latitude/longitude variables. $(e)"
 	end
-		
+
+	### TIME
 	try
 		if t_period == "rdd" # Rata Die Days
 			add_temporal_dimension!(gf, infile, time_name, :t, DateTime(0000, 12, 31), u"d", force = true)
@@ -1815,25 +1645,55 @@ if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_ma
 		@info "Could not add time variable. $(e)"
 	end
 
-	try
-		take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
-		vel_units = vel_num/vel_den
-		add_field!(gf, infile, u_name, :u, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation)
-		add_field!(gf, infile, v_name, :v, vel_units, "speed",
-			take_axes = take_axes, permutation = permutation)
-	catch e
-		@info "Could not add velocity variables. $(e)"
+	### FIELD
+	if itp_make_kind in ["WATER", "WIND", "STOKES"]
+		try
+			take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
+			vel_units = vel_num/vel_den
+			missings_name_parsed = String.(split(missings_name, ","))
+			add_field!(gf, infile, u_name, :u, vel_units, "speed",
+				take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+			add_field!(gf, infile, v_name, :v, vel_units, "speed",
+				take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+		catch e
+			@info "Could not add velocity variables. $(e)"
+		end
+	elseif itp_make_kind == "TEMPERATURE"
+		try
+			take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
+			missings_name_parsed = String.(split(missings_name, ","))
+			add_field!(gf, infile, T_name, :temp, T_units, "temperature",
+				take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+		catch e
+			@info "Could not add temperature variable. $(e)"
+		end
+	elseif itp_make_kind == "NUTRIENTS"
+		try
+			take_axes = remove_axes === "" ? [:,:,:] : [i == remove_axes ? 1 : Colon() for i = 1:4]
+			N_units = N_units_num/N_units_den
+			missings_name_parsed = String.(split(missings_name, ","))
+			add_field!(gf, infile, N_name, :no3, N_units, "concentration",
+				take_axes = take_axes, permutation = permutation, scale_factor_name = scale_factor_name, add_offset_name = add_offset_name, missings_name = missings_name_parsed)
+		catch e
+			@info "Could not add nutrients variable. $(e)"
+		end
 	end
+
+	####################
 	
 	ranges_increasing!(gf)
 	sph2xy!(gf)
 	
 	itp_make = InterpolatedField(gf)
-	add_derivatives!(itp_make)
 
-	@info "Interpolant generated."
+	if itp_make_kind in ["WATER", "WIND", "STOKES"]
+		add_derivatives!(itp_make)
+	end
 
+	@info "Interpolant generated. A save file dialog has been opened (possibly behind this interface)."
+
+	sleep(0.5)
+	
 	itp_make_export_path = save_file()
 	outfile = itp_make_export_path * ".jld2"
 
@@ -1844,6 +1704,10 @@ if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_ma
 			jldsave(outfile, WIND_ITP = itp_make)
 		elseif itp_make_kind == "STOKES"
 			jldsave(outfile, STOKES_ITP = itp_make)
+		elseif itp_make_kind == "TEMPERATURE"
+			jldsave(outfile, TEMPERATURE_ITP = itp_make)
+		elseif itp_make_kind == "NUTRIENTS"
+			jldsave(outfile, NUTRIENTS_ITP = itp_make)
 		end
 
 		@info "Custom interpolant created at $(outfile)"
@@ -1852,6 +1716,194 @@ if itp_make_raw_file_type == ".mat" && itp_make_raw_file !== "" && custom_itp_ma
 		@info "Custom interpolant could not be exported."
 	end
 	
+end # if
+end # let
+
+# ╔═╡ 8c13852d-d92e-44d2-9e4e-c038c65c2c34
+let
+	@info "Defining dummy InterpolatedField"
+	
+	gf = GriddedField(3)
+	
+	append!(gf.dims_names, [(:x, u"m"), (:y, u"m"), (:t, u"d")])
+	gf.dims[:x] = range(0, 1, length = 5)
+	gf.dims[:y] = range(0, 1, length = 5)
+	gf.dims[:t] = range(0, 1, length = 5)
+
+	append!(gf.fields_names, [(:u, u"m/s")])
+	gf.fields[:u] = zeros(5, 5, 5)
+
+	gf
+
+	global DUMMY_ITP = InterpolatedField(gf)
+	nothing
+end
+
+# ╔═╡ 45d67f51-53d1-4d07-8022-168a44408705
+PlutoHooks.@use_memo([water_load]) do
+	if water_load
+		WATER_PATH = pick_file(filterlist = "jld2")
+	
+		try
+			WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
+			@info "Custom water interpolant loaded!"
+		catch e
+			@info "Water itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WATER_ITP`."
+			WATER_ITP.x = DUMMY_ITP
+			nothing
+		end
+	else
+		WATER_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WATER_ITP.jld2")
+		WATER_ITP.x = load(WATER_PATH, "WATER_ITP")
+		nothing
+	end
+
+	nothing
+end
+
+# ╔═╡ 0afdbfc4-3feb-4e65-a3f2-b6c200aad068
+PlutoHooks.@use_memo([wind_load]) do
+	if wind_load
+		WIND_PATH = pick_file(filterlist = "jld2")
+	
+		try
+			WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
+			@info "Custom wind interpolant loaded!"
+		catch
+			@info "Wind itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `WIND_ITP`."
+			WIND_ITP.x = DUMMY_ITP
+			nothing
+		end
+	else
+		WIND_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "WIND_ITP.jld2")
+		WIND_ITP.x = load(WIND_PATH, "WIND_ITP")
+		nothing
+	end
+
+end
+
+# ╔═╡ 7ba608cd-5217-4eb1-a4d8-f0279934ad5c
+PlutoHooks.@use_memo([stokes_load]) do
+	if stokes_load
+		STOKES_PATH = pick_file(filterlist = "jld2")
+	
+		try
+			STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
+			@info "Custom Stokes interpolant loaded!"
+		catch
+			@info "Stokes itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `STOKES_ITP`."
+			STOKES_ITP.x = DUMMY_ITP
+			nothing
+		end
+	else
+		STOKES_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "STOKES_ITP.jld2")
+		STOKES_ITP.x = load(STOKES_PATH, "STOKES_ITP")
+		nothing
+	end
+
+end
+
+# ╔═╡ be256376-85f8-4117-950c-71fa134af743
+PlutoHooks.@use_memo([temp_load]) do
+	if temp_load
+		TEMPERATURE_PATH = pick_file(filterlist = "jld2")
+	
+		try
+			TEMPERATURE_ITP.x = load(TEMPERATURE_PATH, "TEMPERATURE_ITP")
+			global temp_custom = true
+			@info "Custom temperature interpolant loaded!"
+		catch
+			@info "Temperature itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `TEMPERATURE_ITP`."
+			TEMPERATURE_ITP.x = DUMMY_ITP
+			nothing
+		end
+	else
+		TEMPERATURE_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "TEMPERATURE_ITP.jld2")
+		TEMPERATURE_ITP.x = load(TEMPERATURE_PATH, "TEMPERATURE_ITP")
+		nothing
+	end
+end
+
+# ╔═╡ 61d348c2-83e7-42c6-9e52-499544bbd7e7
+PlutoHooks.@use_memo([nutr_load]) do
+	if nutr_load
+		NUTRIENTS_PATH = pick_file(filterlist = "jld2")
+	
+		try
+			NUTRIENTS_ITP.x = load(NUTRIENTS_PATH, "NUTRIENTS_ITP")
+			@info "Custom Stokes interpolant loaded!"
+		catch
+			@info "Nutrients itp could not be loaded. The .jld2 file must contain an `InterpolatedField` variable called `NUTRIENTS_ITP`."
+			NUTRIENTS_ITP.x = DUMMY_ITP
+			nothing
+		end
+	else
+		NUTRIENTS_PATH = joinpath(SargassumBOMB._ITPS_SCRATCH.x, "NUTRIENTS_ITP.jld2")
+		NUTRIENTS_ITP.x = load(NUTRIENTS_PATH, "NUTRIENTS_ITP")
+		nothing
+	end
+
+end
+
+# ╔═╡ 0c7b91e9-3b9b-4f71-a472-fa88df92d4b0
+function get_limits_blurb(itp, custom::Bool, title::String)
+	if itp.x === DUMMY_ITP
+		missing = HTML("""<span style="color:pink"><b>missing</b></span>""")
+		
+		return md"""
+		### $(title)
+		
+		Interpolant is **$(missing)**.
+		
+		|             |            |             |           |       |         |
+		|-------------|------------|-------------|-----------|-------|---------|
+		| Lon min (°) | -          | Lat min (°) | -         | T min | -       | 
+		| Lon max (°) | -          | Lat max (°) | -         | T max | -       |
+		"""
+	end
+	
+	lonmin, lonmax, latmin, latmax, tmin, tmax = get_limits(itp)
+
+	kind = !custom ? HTML("""<span style="color:yellow"><b>default</b></span>""") : HTML("""<span style="color:red"><b>custom</b></span>""")
+	
+	return md"""
+	### $(title)
+	
+	Using **$(kind)** interpolant with limits:
+	
+	|             |            |             |           |       |         |
+	|-------------|------------|-------------|-----------|-------|---------|
+	| Lon min (°) | $(lonmin)  | Lat min (°) | $(latmin) | T min | $(tmin) | 
+	| Lon max (°) | $(lonmax)  | Lat max (°) | $(latmax) | T max | $(tmax) |
+	"""
+end
+
+# ╔═╡ d85448cb-6093-48d9-9254-cce4e842d809
+let
+if check_limits
+	water_blurb = get_limits_blurb(WATER_ITP, water_load, "Water velocity")
+	wind_blurb = get_limits_blurb(WIND_ITP, wind_load, "Wind velocity")
+	stokes_blurb = get_limits_blurb(STOKES_ITP, stokes_load, "Stokes drift")
+
+	temp_blurb = get_limits_blurb(TEMPERATURE_ITP, temp_load, "Temperature")
+
+	nutr_blurb = get_limits_blurb(NUTRIENTS_ITP, nutr_load, "Nutrients")
+
+	### FINAL
+
+	final_blurb = md"""
+	$(water_blurb)
+
+	$(wind_blurb)
+
+	$(stokes_blurb)
+
+	$(temp_blurb)
+
+	$(nutr_blurb)
+	"""
+
+	ad(final_blurb, "tip")
 end
 end
 
@@ -1860,17 +1912,18 @@ end
 # ╟─b503b1ff-18b5-46b9-9809-88b54240a762
 # ╟─c3eddd51-43c4-42f4-800a-ae9945df1e86
 # ╟─7f2022c7-a510-46a5-9090-84f58693815c
+# ╟─d85448cb-6093-48d9-9254-cce4e842d809
 # ╟─6e7da02d-a6ac-4065-9b8a-370033450646
 # ╟─c6cf756a-1c17-44bc-8655-b2d674888971
 # ╟─45d67f51-53d1-4d07-8022-168a44408705
 # ╟─0afdbfc4-3feb-4e65-a3f2-b6c200aad068
 # ╟─7ba608cd-5217-4eb1-a4d8-f0279934ad5c
+# ╟─be256376-85f8-4117-950c-71fa134af743
+# ╟─61d348c2-83e7-42c6-9e52-499544bbd7e7
 # ╟─cb2ae3f7-ee48-43e3-8a98-e89977440305
 # ╟─7430330c-7bc1-4404-997b-9f2ea1967a41
 # ╟─13064d2c-b96a-4c93-bcd9-35264ab55cc5
 # ╟─c52db42a-97ab-4364-ac58-704baa7aac36
-# ╟─bccf3ca7-d548-4757-aceb-c86deed47fdb
-# ╟─03a6fa8e-4b8c-42f6-ad56-b10f0cd6f0eb
 # ╟─52e78695-a940-4a62-820b-71724a947c43
 # ╟─8f0df9e4-3cc9-4265-9727-14bd7cf4497f
 # ╟─62907762-cad8-483f-9dd1-5907c43b49ab
@@ -1898,7 +1951,6 @@ end
 # ╟─8a5827c1-8655-4808-8fe0-ff46fc25f982
 # ╟─99b628f1-c072-4d06-a32c-1d0f8d4789bb
 # ╟─66c7f34f-378d-4a37-a112-5032c4cf07a4
-# ╟─4fddac82-52f3-464f-874f-056e8f165ba0
 # ╟─d512eee1-890c-40ce-ab0e-54d1004ad5d2
 # ╟─f6b36bcc-5162-4d84-a1a2-9cb3ff0e8ac1
 # ╟─ea2ec22b-69ab-40d6-b8ea-704e4e6c3de8
@@ -1950,3 +2002,4 @@ end
 # ╟─7fd8cc7c-a2e0-4cae-8448-e6a16d1b0b9c
 # ╟─cbade461-3782-428c-9f3f-218646adfb4b
 # ╟─621934b4-6454-470d-a72b-a522fa723d50
+# ╟─8c13852d-d92e-44d2-9e4e-c038c65c2c34
