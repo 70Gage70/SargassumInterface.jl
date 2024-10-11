@@ -21,7 +21,8 @@ interface code itself has been modified. That is, changing parameters using slid
 function interface(; reset::Bool = false, args...)
     nb = joinpath(_INTERFACE_SCRATCH.x, "interface.jl")
     if reset
-        cp(joinpath(@__DIR__, "interface.jl"), nb, force = true)
+        rm(nb, force = true)
+        Pluto.readwrite(joinpath(@__DIR__, "interface.jl"), nb)
     end
 
     defaults = (
@@ -38,7 +39,7 @@ function __init__()
     nb = joinpath(_INTERFACE_SCRATCH.x, "interface.jl")
 
     if !isfile(nb)
-        cp(joinpath(@__DIR__, "interface.jl"), nb)
+        Pluto.readwrite(joinpath(@__DIR__, "interface.jl"), nb)
     end
 end
 
