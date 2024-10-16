@@ -23,16 +23,20 @@ begin
 	Pkg.add([
 		"SargassumColors", "SargassumFromAFAI", "SargassumBOMB", "PlutoUI", "HypertextLiteral",
 		"NativeFileDialog", "PlutoHooks", "GLMakie", "Dates", "JLD2", "MAT", "NetCDF", "Unitful"])
-end
+	Pkg.update(["SargassumColors", "SargassumFromAFAI", "SargassumBOMB"])
 
-# ╔═╡ d1565b62-ce6e-4e07-a041-f15e4fcc118b
-begin
 	using SargassumColors, SargassumFromAFAI, SargassumBOMB # core
 	using PlutoUI, HypertextLiteral, NativeFileDialog, PlutoHooks # interactivity in notebook
 	using GLMakie # plots
 	using Dates # dates
 	using JLD2, MAT, NetCDF # io
 	using Unitful # units
+
+	try
+		itps_load(SargassumBOMB._ITPS_SCRATCH.x)
+	catch
+		itps_default_construct(download = true)
+	end
 	
 	@info "Loaded dependencies."
 end
@@ -177,17 +181,6 @@ begin
 @info "Hiding Pluto errors"
 	
 html"""<style>.dont-panic{ display: none }</style>"""
-end
-
-# ╔═╡ 04d03599-dc2a-465b-aff6-e24af66969d4
-let
-	@info "Loading default interpolants"
-
-	try
-		itps_load(SargassumBOMB._ITPS_SCRATCH.x)
-	catch
-		itps_default_construct(download = true)
-	end
 end
 
 # ╔═╡ 7ca9e647-d06e-4815-b30b-eb1a4e5f1577
@@ -1968,8 +1961,6 @@ end
 # ╟─65c5d259-943f-432a-8e02-ba77c8650723
 # ╟─084700f3-4f35-466f-91e1-f4853c426abf
 # ╟─589f251d-a2df-4879-9933-4deb95a8003a
-# ╟─d1565b62-ce6e-4e07-a041-f15e4fcc118b
-# ╟─04d03599-dc2a-465b-aff6-e24af66969d4
 # ╟─7ca9e647-d06e-4815-b30b-eb1a4e5f1577
 # ╟─65b2ceb8-40d4-4f97-9541-36e0023c5d6b
 # ╟─2c38594d-7d78-49d8-9597-0b723f56e76f
