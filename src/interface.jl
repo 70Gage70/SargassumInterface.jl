@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.0
 
 using Markdown
 using InteractiveUtils
@@ -169,6 +169,14 @@ html"""
     }
 </style>
 """
+end
+
+# ╔═╡ 65c5d259-943f-432a-8e02-ba77c8650723
+begin
+
+@info "Hiding Pluto errors"
+	
+html"""<style>.dont-panic{ display: none }</style>"""
 end
 
 # ╔═╡ 04d03599-dc2a-465b-aff6-e24af66969d4
@@ -1957,6 +1965,7 @@ end
 # ╟─10a16ae5-044a-47e2-8964-13b334f5d0a8
 # ╟─1b874c8c-08dd-4064-9afc-d62b2e900921
 # ╟─8638b7a5-1ee0-47d2-aa6b-54cc9ab996ff
+# ╟─65c5d259-943f-432a-8e02-ba77c8650723
 # ╟─084700f3-4f35-466f-91e1-f4853c426abf
 # ╟─589f251d-a2df-4879-9933-4deb95a8003a
 # ╟─d1565b62-ce6e-4e07-a041-f15e4fcc118b
