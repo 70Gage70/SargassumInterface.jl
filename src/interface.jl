@@ -33,7 +33,7 @@ begin
 	using Unitful # units
 
 	try
-		itps_load(SargassumBOMB._ITPS_SCRATCH.x)
+		itps_load()
 	catch
 		itps_default_construct(download = true)
 	end
